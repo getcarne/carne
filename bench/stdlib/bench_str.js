@@ -65,3 +65,38 @@ for (var i = 0; i < pairs.length; i++) {
     (Math.max(a.meanMs, b.meanMs) / Math.min(a.meanMs, b.meanMs)).toFixed(2));
 }
 console.log("corpus bytes: " + BIG.length);
+
+// Bridge-floor probe: equals() on identical content is one memcmp
+// kernel-side, so its cost is ~pure snapshot + return overhead.
+console.log("floor probe equals-big | " +
+  (benchmark.measure(function () { str.equals(BIG, BIG); },
+    {iterations: 200, warmup: 20}).meanMs * 1000).toFixed(2) + " us");
+
+// Scaling: indexOf-miss cost vs input size shows the linear floor.
+for (var k = 0; k < 3; k++) {
+  var size = [4096, 65536, BIG.length][k];
+  var s = BIG.slice(0, size);
+  var t = benchmark.measure(function () { str.indexOf(s, "missing-needle-xyz"); },
+    {iterations: 200, warmup: 20});
+  console.log("scale indexOf-miss " + size + "B | " +
+    (t.meanMs * 1000).toFixed(2) + " us");
+}
+
+// std-only ops (no builtin rival): absolute throughput figures.
+var SNAIL = "Hello, World! Cafe au lait, 2026 edition.";
+var L1 = "kitten", L2 = "sitting";
+var WRAP = "aa bb cc dd ee ff gg hh ii jj kk ll mm nn oo pp qq rr ss tt";
+var ANSI = "\x1B[31mred\x1B[0m and \x1B[1mbold\x1B[0m text here";
+var CAMEL = "hello-world_foo-bar_baz";
+var absOps = {
+  "slugify": function () { str.slugify(SNAIL); },
+  "levenshtein": function () { str.levenshtein(L1, L2); },
+  "wordWrap": function () { str.wordWrap(WRAP, 10); },
+  "stripAnsi": function () { str.stripAnsi(ANSI); },
+  "camelCase": function () { str.camelCase(CAMEL); },
+  "padCenter": function () { str.padCenter(CAMEL, 40, "-"); }
+};
+for (var name in absOps) {
+  var r = benchmark.measure(absOps[name], {iterations: 2000, warmup: 200});
+  console.log("abs " + name + " | " + (r.meanMs * 1000).toFixed(2) + " us");
+}
