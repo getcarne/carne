@@ -15,6 +15,7 @@ require("std/path");
 require("std/colors");
 require("std/css");
 require("std/diff");
+require("std/str");
 require("std/gettext");
 require("std/mimetype");
 require("std/benchmark");

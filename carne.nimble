@@ -17,6 +17,7 @@ requires "javascriptcore >= 0.1.0"
 
 requires "nimcypher >= 0.2.5"
 requires "openparser >= 0.4.1"
+requires "nimsimd >= 1.3.2"
 requires "mimedb >= 0.1.4"
 requires "powpow >= 0.2.4"
 requires "semver >= 1.2.3"

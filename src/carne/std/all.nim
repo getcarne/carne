@@ -18,6 +18,7 @@ import ./feed
 import ./csv
 import ./xml
 import ./sql
+import ./str
 import ./crypto
 import ./path
 import ./colors
@@ -44,6 +45,7 @@ registerStd("std/feed", feed.install)
 registerStd("std/csv", csv.install)
 registerStd("std/xml", xml.install)
 registerStd("std/sql", sql.install)
+registerStd("std/str", str.install)
 registerStd("std/crypto", crypto.install)
 registerStd("std/path", path.install)
 registerStd("std/colors", colors.install)
