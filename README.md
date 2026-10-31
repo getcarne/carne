@@ -160,7 +160,7 @@ processing, crypto, networking, and developer tools:
 - `std/css` - CSS parsing and declaration validation
 - `std/diff` - unified diffs
 - `std/gettext` - `.po` parsing and translation
-- `std/str` - string utilities (SIMD search/case/trim plus converters)
+- `std/str` - string utilities and validators (pure JS)
 - `std/mimetype` - MIME type lookup
 - `std/benchmark` - in-process microbenchmarking
 - `std/qr` - QR code generation (decoding out of scope in v1)

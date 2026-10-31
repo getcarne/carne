@@ -227,3 +227,50 @@ test "error shapes":
     discard runCode("require('std/str').repeat('ab', -1)")
   expect CarneError:
     discard runCode("require('std/str').wordWrap('ab', 0)")
+
+test "validators":
+  check runCode("require('std/str').isEmail('a@b.com')") == "true"
+  check runCode("require('std/str').isEmail('bad@')") == "false"
+  check runCode("require('std/str').isEmail('x@y')") == "false"
+  check runCode("require('std/str').isEmail(42)") == "false"
+  check runCode("require('std/str').isDomain('example.com')") == "true"
+  check runCode("require('std/str').isDomain('-bad.com')") == "false"
+  check runCode("require('std/str').isDomain('a.b')") == "false"
+  check runCode("require('std/str').isIPv4('1.2.3.4')") == "true"
+  check runCode("require('std/str').isIPv4('01.2.3.4')") == "false"
+  check runCode("require('std/str').isIPv4('1.2.3.256')") == "false"
+  check runCode("require('std/str').isIPv6('::1')") == "true"
+  check runCode("require('std/str').isIPv6('fe80::1')") == "true"
+  check runCode("require('std/str').isIPv6('1::2::3')") == "false"
+  check runCode("require('std/str').isIPv6('::ffff:1.2.3.4')") == "true"
+  check runCode("require('std/str').isIP('1.2.3.4')") == "true"
+  check runCode("require('std/str').isIP('::1')") == "true"
+  check runCode("require('std/str').isIP('nope')") == "false"
+  check runCode(
+    "require('std/str').isWebUrl('https://example.com/x')") == "true"
+  check runCode("require('std/str').isWebUrl('ftp://x.com')") == "false"
+  check runCode(
+    "require('std/str').isWebUrl('http://localhost:3000/')") == "true"
+  check runCode(
+    "require('std/str').isUUID('550e8400-e29b-41d4-a716-446655440000')") ==
+    "true"
+  check runCode("require('std/str').isUUID('xyz')") == "false"
+  check runCode("require('std/str').isPort(8080)") == "true"
+  check runCode("require('std/str').isPort('443')") == "true"
+  check runCode("require('std/str').isPort(80.5)") == "false"
+  check runCode("require('std/str').isPort('')") == "false"
+  check runCode("require('std/str').isPort(null)") == "false"
+  check runCode("require('std/str').isPort(70000)") == "false"
+
+test "astral plane follows JS units":
+  check runCode(
+    "require('std/str').slice('a'+String.fromCodePoint(0x1F600)+'b', 0, 2).length") ==
+    "2"
+  check runCode(
+    "JSON.stringify(require('std/str').split('a'+String.fromCodePoint(0x1F600)+'b', ''))") ==
+    "[\"a\",\"\\ud83d\",\"\\ude00\",\"b\"]"
+  check runCode(
+    "require('std/str').reverse('a'+String.fromCodePoint(0x1F600)+'b')") ==
+    "b😀a"
+  check runCode(
+    "require('std/str').replaceAll('aaa', 'a', '$&')") == "$&$&$&"
