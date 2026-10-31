@@ -7,7 +7,7 @@ import ./carne/runtime
 export runtime
 
 when isMainModule:
-  import std/[os, parseopt]
+  import std/[os, parseopt, strutils]
 
   import ./carne/cli
   import ./carne/std/all
@@ -138,6 +138,46 @@ when isMainModule:
       printPkgHelp()
       return 1
 
+  proc runTestFiles(files: seq[string]): int =
+    ## Runs each test file in a fresh runtime (std/test owns
+    ## semantics; the driver only isolates and summarizes).
+    var failedFiles: seq[string] = @[]
+    for f in files:
+      echo grey("# " & f)
+      if runScriptFile(f, @[]) == 0:
+        discard
+      else:
+        failedFiles.add(f)
+    if files.len > 1:
+      if failedFiles.len == 0:
+        echo "pass " & $files.len & "/" & $files.len & " files"
+      else:
+        echo errPrefix() & " fail " &
+          $(files.len - failedFiles.len) & "/" & $files.len &
+          " files: " & failedFiles.join(", ")
+    if failedFiles.len == 0: 0 else: 1
+
+  proc runTestCommand(args: seq[string]): int =
+    ## `carne test` runs tests/**/*.test.js; `carne test <file>`
+    ## runs the given test module (file-only).
+    if args.len == 0:
+      let files = findTestFiles("tests")
+      if files.len == 0:
+        if not dirExists("tests"):
+          echo errPrefix() & " no tests/ directory found"
+        else:
+          echo errPrefix() & " no test files found (tests/**/*.test.js)"
+        return 1
+      return runTestFiles(files)
+    var files: seq[string] = @[]
+    for a in args:
+      let f = resolveTestArg(a)
+      if f == "":
+        echo errPrefix() & " test file not found: `" & a & "`"
+        return 1
+      files.add(f)
+    return runTestFiles(files)
+
   proc main(): int =
     var command = ""
     var positionals: seq[string] = @[]
@@ -200,6 +240,9 @@ when isMainModule:
     of "pkg":
       # package management on the ~/.carne home
       return runPkg(positionals, pkgUrl, pkgTags, pkgWeb, pkgDryRun, pkgYes)
+    of "test":
+      # test runner over tests/**/*.test.js
+      return runTestCommand(positionals)
     else:
       # default command: a bare script path runs like `run <script>`
       if positionals.len >= 0 and fileExists(command):

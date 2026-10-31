@@ -2,7 +2,7 @@
 #
 # Colors are disabled under NO_COLOR or TERM=dumb.
 
-import std/os
+import std/[os, strutils, algorithm]
 
 const versionStr* = "0.1.0"
 
@@ -30,6 +30,37 @@ proc grey*(s: string): string =
 proc errPrefix*(): string =
   paint("error:", ansiRed)
 
+proc findTestFiles*(root = "tests"): seq[string] =
+  ## Recursive `*.test.js` discovery under root, sorted. Empty when
+  ## the directory is missing (callers report that themselves).
+  result = @[]
+  if not dirExists(root):
+    return
+  for path in walkDirRec(root, yieldFilter = {pcFile}):
+    if path.endsWith(".test.js"):
+      result.add(path)
+  result.sort()
+
+proc resolveTestArg*(arg: string; root = "tests"): string =
+  ## File-only resolution for `carne test <arg>`. Tries the arg as
+  ## given, then under root, then `.test.js` variants. Returns ""
+  ## when nothing exists.
+  var cands: seq[string] = @[arg]
+  cands.add(root / arg)
+  if not arg.endsWith(".js"):
+    cands.add(root / arg & ".test.js")
+    cands.add(arg & ".test.js")
+    cands.add(root / arg & ".js")
+    cands.add(arg & ".js")
+  var seen: seq[string] = @[]
+  for c in cands:
+    if c in seen:
+      continue
+    seen.add(c)
+    if fileExists(c) and not dirExists(c):
+      return c
+  ""
+
 proc printHelp*() =
   echo grey("A JavaScript runtime in Nim")
   echo grey("  (c) OpenPeeps | MIT License")
@@ -39,6 +70,7 @@ proc printHelp*() =
   echo ""
   echo label("Scripting")
   echo "  run <script.js> [args]  " & grey("run a .js file")
+  echo "  test [file] [...]       " & grey("run tests/**/*.test.js (or the given file)")
   echo ""
   echo label("Packages")
   echo "  pkg install <spec>      " & grey("install a package by name, git URL (--url=... pins a source URL)")

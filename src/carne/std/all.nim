@@ -32,6 +32,7 @@ import ./svg
 import ./http
 import ./ws
 import ./uuid
+import ./test
 
 registerStd("std/env", env.install)
 registerStd("std/os", os.install)
@@ -59,3 +60,4 @@ registerStd("std/svg", svg.install)
 registerStd("std/http", http.install)
 registerStd("std/ws", ws.install)
 registerStd("std/uuid", uuid.install)
+registerStd("std/test", test.install)
