@@ -169,7 +169,12 @@ test "serve with a non-function handler throws instead of crashing":
 
 test "strict scalars reject mistyped args":
   try:
-    discard runCode("require('std/env').getenv(42)")
+    discard runCode("require('std/env').getEnv(42)")
+    fail()
+  except CarneError as e:
+    check "expected `string`" in e.msg
+  try:
+    discard runCode("require('std/env').putEnv('K', 42)")
     fail()
   except CarneError as e:
     check "expected `string`" in e.msg
@@ -198,21 +203,21 @@ test "options bags reject arrays":
 
 test "type mismatch carries the JSDoc block first":
   try:
-    discard runCode("require('std/env').getenv(42)")
+    discard runCode("require('std/env').getEnv(42)")
     fail()
   except CarneError as e:
-    check "/*\n * env.getenv(\"HOME\") -> string | undefined\n */" in e.msg
+    check "/*\n * env.getEnv(\"HOME\") -> string | undefined\n */" in e.msg
     check "type mismatch parameter: `key`. Got `number`," &
       " expected `string`" in e.msg
     check e.msg.find("/*") < e.msg.find("type mismatch")
 
 test "arity errors carry the JSDoc block after the message":
   try:
-    discard runCode("require('std/env').getenv()")
+    discard runCode("require('std/env').getEnv()")
     fail()
   except CarneError as e:
-    check "getenv: expected 1 argument(s), got 0" in e.msg
-    check "/*\n * env.getenv(\"HOME\") -> string | undefined\n */" in e.msg
+    check "getEnv: expected 1 argument(s), got 0" in e.msg
+    check "/*\n * env.getEnv(\"HOME\") -> string | undefined\n */" in e.msg
     check e.msg.find("got 0") < e.msg.find("/*")
 
 test "optional params keep their defaults":

@@ -141,13 +141,12 @@ requiring one costs nothing until first use. Timers are globals
 The library covers OS and process access, data formats, text
 processing, crypto, networking, and developer tools:
 
-- `std/env` - process info and environment (args, getenv, cwd, exit)
+- `std/env` - process info and environment (args, getEnv, putEnv, delEnv, hasEnv, parse/load `.env`, cwd, exit)
 - `std/os` - synchronous OS utilities (files, dirs, sleep, exec)
 - Timers - `setTimeout`/`setInterval` globals, no require needed
 - `std/yaml` - YAML parsing and serialization
 - `std/toml` - TOML parsing and serialization
 - `std/ical` - iCalendar parsing and serialization
-- `std/dotenv` - `.env` file parsing with variable expansion
 - `std/plist` - Apple property lists
 - `std/bson` - BSON parsing and serialization
 - `std/csv` - CSV parsing
@@ -174,7 +173,7 @@ Full API reference with examples: https://openpeeps.github.io/carne/
 ## Roadmap
 - [x] JSC runtime: console/process/require/timers CLI
 - [x] Package management (`carne pkg`, manifests)
-- [x] Format std libs (yaml, toml, ical, dotenv, plist, bson, csv, xml, vcard, feed)
+- [x] Format std libs (yaml, toml, ical, env, plist, bson, csv, xml, vcard, feed)
 - [x] `std/sql`, `std/crypto`, `std/path`, `std/colors`
 - [x] `std/css`, `std/diff`, `std/gettext`, `std/mimetype`, `std/benchmark`, `std/qr`, `std/svg`
 - [x] `std/http` (async client + server, tuning opts, method helpers) + top-level promise unwrap in `runCode`

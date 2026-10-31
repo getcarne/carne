@@ -3,7 +3,6 @@ require("std/os");
 require("std/yaml");
 require("std/toml");
 require("std/ical");
-require("std/dotenv");
 require("std/plist");
 require("std/bson");
 require("std/vcard");

@@ -1,8 +1,7 @@
-const dotenv = require("std/dotenv");
 const env = require("std/env");
 const os = require("std/os");
 
-const parsed = dotenv.parse([
+const parsed = env.parse([
   "# demo env",
   "APP_NAME=carne",
   "APP_PORT=8080",
@@ -17,6 +16,12 @@ console.log("parsed RAW: " + parsed.RAW);
 
 const tmp = "/tmp/carne_dotenv_demo";
 os.writeFile(tmp, "CARNE_DEMO_LOADED=it-works\n");
-dotenv.load(tmp);
-console.log("loaded into env: " + env.getenv("CARNE_DEMO_LOADED"));
+env.load(tmp);
+console.log("loaded into env: " + env.getEnv("CARNE_DEMO_LOADED"));
 os.remove(tmp);
+
+env.putEnv("CARNE_DEMO_DIRECT", "yes");
+console.log("direct putEnv: " + env.getEnv("CARNE_DEMO_DIRECT"));
+console.log("hasEnv: " + env.hasEnv("CARNE_DEMO_DIRECT"));
+env.delEnv("CARNE_DEMO_DIRECT");
+console.log("after delEnv: " + env.hasEnv("CARNE_DEMO_DIRECT"));

@@ -11,7 +11,6 @@ import ./os
 import ./yaml
 import ./toml
 import ./ical
-import ./dotenv
 import ./plist
 import ./bson
 import ./vcard
@@ -38,7 +37,6 @@ registerStd("std/os", os.install)
 registerStd("std/yaml", yaml.install)
 registerStd("std/toml", toml.install)
 registerStd("std/ical", ical.install)
-registerStd("std/dotenv", dotenv.install)
 registerStd("std/plist", plist.install)
 registerStd("std/bson", bson.install)
 registerStd("std/vcard", vcard.install)
