@@ -4,9 +4,14 @@ import unittest
 
 import carne
 import carne/modules
-import carne/std/str
+import carne/pkg/stdsync
 
-registerStd("std/str", str.install)
+let stdHome = getTempDir() / "carne_std_str"
+removeDir(stdHome)
+createDir(stdJsStore(stdHome))
+copyFile(currentSourcePath.parentDir() / ".." / "src" / "carne" /
+  "std" / "js" / "str.js", stdJsStore(stdHome) / "str.js")
+initStdDispatcher(stdHome)
 
 test "indexOf basics and JS parity":
   check runCode("require('std/str').indexOf('hello world', 'world')") == "6"

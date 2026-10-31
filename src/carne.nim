@@ -14,10 +14,12 @@ when isMainModule:
   import ./carne/pkg/pkgman
   import ./carne/pkg/publish
   import ./carne/pkg/loader
+  import ./carne/pkg/stdsync
 
   proc runScriptFile(filePath: string; extraArgs: seq[string]): int =
     ## Execute JS from a file
     initPkgLoaderLazy()
+    initStdDispatcher()
     try:
       let res = runFileEx(filePath, extraArgs)
       return res.code
@@ -178,6 +180,51 @@ when isMainModule:
       files.add(f)
     return runTestFiles(files)
 
+  proc printStdHelp() =
+    echo "usage: carne std <init|update|list>"
+    echo ""
+    echo "  init                        " & grey("download JS stdlib (std/*) into ~/.carne/std")
+    echo "  update                      " & grey("refresh all JS stdlib files")
+    echo "  list                        " & grey("show installed JS stdlib version and files")
+
+  proc runStd(args: seq[string]): int =
+    ## JS-based standard library in the ~/.carne home (CARNE_HOME
+    ## overrides). Nim-based modules stay embedded in the binary.
+    if args.len == 0:
+      printStdHelp()
+      return 1
+    case args[0]
+    of "init", "update":
+      if args.len > 1:
+        echo errPrefix() & " usage: carne std <init|update>"
+        return 1
+      try:
+        let r = stdSync()
+        echo "std " & r.version & " (" & r.refUsed & "): " &
+          $r.count & " files in " & stdJsStore()
+        return 0
+      except CatchableError as e:
+        echo errPrefix() & " " & e.msg
+      return 1
+    of "list":
+      if args.len > 1:
+        echo errPrefix() & " usage: carne std list"
+        return 1
+      let s = stdStatus()
+      if not s.found:
+        echo errPrefix() & " no JS stdlib installed (run `carne std init`)"
+        return 1
+      let at = if s.refUsed.len > 0: " (" & s.refUsed & ")" else: ""
+      echo "std " & s.version & at & ":"
+      for e in s.entries:
+        let mark = if e.present: "installed" else: "missing"
+        echo "  " & e.name & "  " & grey(e.file & " (" & mark & ")")
+      return 0
+    else:
+      echo errPrefix() & " unknown std command `" & args[0] & "`"
+      printStdHelp()
+      return 1
+
   proc main(): int =
     var command = ""
     var positionals: seq[string] = @[]
@@ -243,6 +290,9 @@ when isMainModule:
     of "test":
       # test runner over tests/**/*.test.js
       return runTestCommand(positionals)
+    of "std":
+      # JS-based standard library management
+      return runStd(positionals)
     else:
       # default command: a bare script path runs like `run <script>`
       if positionals.len >= 0 and fileExists(command):

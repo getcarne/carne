@@ -1,3 +1,4 @@
+import std/os
 import std/strutils
 import std/tables
 import unittest
@@ -8,14 +9,20 @@ import pkg/openparser/json
 
 import carne
 import carne/modules
-import carne/std/colors
+import carne/pkg/stdsync
 import carne/std/diff
 import carne/std/env
 import carne/std/http
 import carne/std/qr
 import carne/std/sql
 
-registerStd("std/colors", colors.install)
+let stdHome = getTempDir() / "carne_std_nimvalue"
+removeDir(stdHome)
+createDir(stdJsStore(stdHome))
+copyFile(currentSourcePath.parentDir() / ".." / "src" / "carne" /
+  "std" / "js" / "colors.js", stdJsStore(stdHome) / "colors.js")
+initStdDispatcher(stdHome)
+
 registerStd("std/diff", diff.install)
 registerStd("std/env", env.install)
 registerStd("std/http", http.install)

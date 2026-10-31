@@ -21,12 +21,18 @@ type
   Installer* = proc(ctx: JSContextRef; rt: Runtime): JSObjectRef
   PkgRequireHook* = proc(ctx: JSContextRef; spec: string;
     exception: ptr JSValueRef): JSValueRef {.closure.}
+  StdRequireHook* = proc(ctx: JSContextRef; spec, name: string;
+    exception: ptr JSValueRef): JSValueRef {.closure.}
 
 var installers = initTable[string, Installer]()
 
 var pkgRequireHook*: PkgRequireHook = nil
   ## File-backed `require("pkg/...")` and relative requires go through
   ## this hook (set by pkg/loader). Nil in tests that do not need it.
+
+var stdRequireHook*: StdRequireHook = nil
+  ## File-backed `require("std/<name>")` for JS-based modules (set by
+  ## pkg/stdsync). Nil in tests that do not need it.
 
 var onTeardown*: seq[proc()] = @[]
 
@@ -64,6 +70,8 @@ proc requireImpl(ctx: JSContextRef; function, thisObject: JSObjectRef;
       return nil
     return pkgRequireHook(ctx, spec, exception)
   if not installers.hasKey(spec):
+    if spec.startsWith("std/") and stdRequireHook != nil:
+      return stdRequireHook(ctx, spec, spec[4 .. ^1], exception)
     throwError(ctx, "require: unknown module \"" & spec & "\"", exception)
     return nil
   let ns = installers[spec](ctx, rt)

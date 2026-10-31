@@ -18,10 +18,8 @@ import ./feed
 import ./csv
 import ./xml
 import ./sql
-import ./str
 import ./crypto
 import ./path
-import ./colors
 import ./css
 import ./diff
 import ./gettext
@@ -32,7 +30,6 @@ import ./svg
 import ./http
 import ./ws
 import ./uuid
-import ./test
 
 registerStd("std/env", env.install)
 registerStd("std/os", os.install)
@@ -46,10 +43,8 @@ registerStd("std/feed", feed.install)
 registerStd("std/csv", csv.install)
 registerStd("std/xml", xml.install)
 registerStd("std/sql", sql.install)
-registerStd("std/str", str.install)
 registerStd("std/crypto", crypto.install)
 registerStd("std/path", path.install)
-registerStd("std/colors", colors.install)
 registerStd("std/css", css.install)
 registerStd("std/diff", diff.install)
 registerStd("std/gettext", gettext.install)
@@ -60,4 +55,3 @@ registerStd("std/svg", svg.install)
 registerStd("std/http", http.install)
 registerStd("std/ws", ws.install)
 registerStd("std/uuid", uuid.install)
-registerStd("std/test", test.install)

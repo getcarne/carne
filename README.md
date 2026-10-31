@@ -65,6 +65,11 @@ Scripting
   run <script.js> [args]  run a .js file
   test [file] [...]       run tests/**/*.test.js (or the given file)
 
+Standard library
+  std init                download JS stdlib (std/*) into ~/.carne/std
+  std update              refresh all JS stdlib files
+  std list                show installed JS stdlib version and files
+
 Packages
   pkg install <spec>      install a package by name, git URL (--url=... pins a source URL)
   pkg remove <name> [ver] uninstall a package (one version, or all)
@@ -157,11 +162,11 @@ processing, crypto, networking, and developer tools:
 - `std/sql` - SQL parsing and validation (sqlite, postgres, mysql)
 - `std/crypto` - hashing, AEAD sealing, signatures, passwords
 - `std/path` - file-path and URL parsing (parse-only in v1)
-- `std/colors` - color parsing, formatting and math (pure JS)
+- `std/colors` - color parsing, formatting and math (fetched via `carne std init`)
 - `std/css` - CSS parsing and declaration validation
 - `std/diff` - unified diffs
 - `std/gettext` - `.po` parsing and translation
-- `std/str` - string utilities and validators (pure JS)
+- `std/str` - string utilities and validators (fetched via `carne std init`)
 - `std/mimetype` - MIME type lookup
 - `std/benchmark` - in-process microbenchmarking
 - `std/qr` - QR code generation (decoding out of scope in v1)
@@ -169,7 +174,7 @@ processing, crypto, networking, and developer tools:
 - `std/http` - async HTTP client + server (optional worker threads)
 - `std/ws` - async + sync WebSocket client and server
 - `std/uuid` - UUID generation (v1-v8) and inspection
-- `std/test` - minimal test runner (test/describe/expect/assert, pure JS)
+- `std/test` - minimal test runner (test/describe/expect/assert, fetched via `carne std init`)
 
 Full API reference with examples: https://openpeeps.github.io/carne/
 

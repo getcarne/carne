@@ -37,7 +37,7 @@ proc looksEsm(code: string): bool =
           return true
   false
 
-proc loadJsFile(ctx: JSContextRef; rt: Runtime; spec, path: string;
+proc loadJsFile*(ctx: JSContextRef; rt: Runtime; spec, path: string;
     exception: ptr JSValueRef): JSValueRef =
   ## CommonJS-loads one file, returns `module.exports`.
   var code: string

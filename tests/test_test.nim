@@ -5,9 +5,14 @@ import unittest
 import carne
 import carne/cli
 import carne/modules
-import carne/std/test as stdtest
+import carne/pkg/stdsync
 
-registerStd("std/test", stdtest.install)
+let stdHome = getTempDir() / "carne_std_test"
+removeDir(stdHome)
+createDir(stdJsStore(stdHome))
+copyFile(currentSourcePath.parentDir() / ".." / "src" / "carne" /
+  "std" / "js" / "test.js", stdJsStore(stdHome) / "test.js")
+initStdDispatcher(stdHome)
 
 test "expect matchers pass":
   check runCode(

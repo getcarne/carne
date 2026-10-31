@@ -1,10 +1,16 @@
+import std/os
 import unittest
 
 import carne
 import carne/modules
-import carne/std/colors
+import carne/pkg/stdsync
 
-registerStd("std/colors", colors.install)
+let stdHome = getTempDir() / "carne_std_colors"
+removeDir(stdHome)
+createDir(stdJsStore(stdHome))
+copyFile(currentSourcePath.parentDir() / ".." / "src" / "carne" /
+  "std" / "js" / "colors.js", stdJsStore(stdHome) / "colors.js")
+initStdDispatcher(stdHome)
 
 test "colors parse named and hex":
   check runCode(

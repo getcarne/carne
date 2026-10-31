@@ -72,6 +72,11 @@ proc printHelp*() =
   echo "  run <script.js> [args]  " & grey("run a .js file")
   echo "  test [file] [...]       " & grey("run tests/**/*.test.js (or the given file)")
   echo ""
+  echo label("Standard library")
+  echo "  std init                " & grey("download JS stdlib (std/*) into ~/.carne/std")
+  echo "  std update              " & grey("refresh all JS stdlib files")
+  echo "  std list                " & grey("show installed JS stdlib version and files")
+  echo ""
   echo label("Packages")
   echo "  pkg install <spec>      " & grey("install a package by name, git URL (--url=... pins a source URL)")
   echo "  pkg remove <name> [ver] " & grey("uninstall a package (one version, or all)")
