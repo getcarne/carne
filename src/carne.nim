@@ -24,10 +24,10 @@ when isMainModule:
       let res = runFileEx(filePath, extraArgs)
       return res.code
     except CarneError as e:
-      echo errPrefix() & " " & e.msg
+      displayError(e.msg)
       return 1
     except IOError as e:
-      echo errPrefix() & " " & e.msg
+      displayError(e.msg)
       return 1
 
   proc printPkgHelp() =
@@ -59,84 +59,84 @@ when isMainModule:
     case args[0]
     of "install":
       if args.len < 2:
-        echo errPrefix() & " package name or URL is required"
+        displayError("package name or URL is required")
         printPkgHelp()
         return 1
       if args.len > 2:
-        echo errPrefix() & " only one package allowed"
+        displayError("only one package allowed")
         return 1
       try:
         if cfg.pkgInstall(args[1], url = pkgUrl):
           return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "remove", "uninstall":
       if args.len < 2:
-        echo errPrefix() & " package name is required"
+        displayError("package name is required")
         printPkgHelp()
         return 1
       if args.len > 3:
-        echo errPrefix() & " usage: carne pkg remove <name> [version]"
+        displayError("usage: carne pkg remove <name> [version]")
         return 1
       let version = if args.len > 2: args[2] else: ""
       try:
         if cfg.pkgRemove(args[1], version):
           return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "update":
       if args.len > 2:
-        echo errPrefix() & " usage: carne pkg update [name]"
+        displayError("usage: carne pkg update [name]")
         return 1
       let name = if args.len > 1: args[1] else: ""
       try:
         if cfg.pkgUpdate(name):
           return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "list":
       try:
         cfg.pkgList()
         return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "develop":
       if args.len > 2:
-        echo errPrefix() & " usage: carne pkg develop [path]"
+        displayError("usage: carne pkg develop [path]")
         return 1
       let dir = if args.len == 2: args[1] else: getCurrentDir()
       try:
         if cfg.pkgDevelop(dir):
           return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "prune":
       try:
         cfg.pkgPrune()
         return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "refresh":
       try:
         if cfg.refreshAllSources():
           return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "publish":
       if args.len > 1:
-        echo errPrefix() & " usage: carne pkg publish [--tags=..] [--web=..] [--url=..] [--dry-run] [--yes]"
+        displayError("usage: carne pkg publish [--tags=..] [--web=..] [--url=..] [--dry-run] [--yes]")
         return 1
       return publishCommand(getCurrentDir(), (tags: pkgTags, web: pkgWeb,
         urlOverride: pkgUrl, dryRun: pkgDryRun, yesMode: pkgYes))
     else:
-      echo errPrefix() & " unknown pkg command `" & args[0] & "`"
+      displayError("unknown pkg command `" & args[0] & "`")
       printPkgHelp()
       return 1
 
@@ -145,18 +145,18 @@ when isMainModule:
     ## semantics; the driver only isolates and summarizes).
     var failedFiles: seq[string] = @[]
     for f in files:
-      echo grey("# " & f)
+      display(span(grey("# " & f)))
       if runScriptFile(f, @[]) == 0:
         discard
       else:
         failedFiles.add(f)
     if files.len > 1:
       if failedFiles.len == 0:
-        echo "pass " & $files.len & "/" & $files.len & " files"
+        displaySuccess("pass " & $files.len & "/" & $files.len & " files")
       else:
-        echo errPrefix() & " fail " &
+        displayError("fail " &
           $(files.len - failedFiles.len) & "/" & $files.len &
-          " files: " & failedFiles.join(", ")
+          " files: " & failedFiles.join(", "))
     if failedFiles.len == 0: 0 else: 1
 
   proc runTestCommand(args: seq[string]): int =
@@ -166,16 +166,16 @@ when isMainModule:
       let files = findTestFiles("tests")
       if files.len == 0:
         if not dirExists("tests"):
-          echo errPrefix() & " no tests/ directory found"
+          displayError("no tests/ directory found")
         else:
-          echo errPrefix() & " no test files found (tests/**/*.test.js)"
+          displayError("no test files found (tests/**/*.test.js)")
         return 1
       return runTestFiles(files)
     var files: seq[string] = @[]
     for a in args:
       let f = resolveTestArg(a)
       if f == "":
-        echo errPrefix() & " test file not found: `" & a & "`"
+        displayError("test file not found: `" & a & "`")
         return 1
       files.add(f)
     return runTestFiles(files)
@@ -196,32 +196,39 @@ when isMainModule:
     case args[0]
     of "init", "update":
       if args.len > 1:
-        echo errPrefix() & " usage: carne std <init|update>"
+        displayError("usage: carne std <init|update>")
         return 1
       try:
         let r = stdSync()
-        echo "std " & r.version & " (" & r.refUsed & "): " &
-          $r.count & " files in " & stdJsStore()
+        if r.upToDate:
+          displayInfo("std " & r.version & " (" & r.refUsed &
+            "): already up to date")
+        elif r.count == 0:
+          displaySuccess("std " & r.version & " (" & r.refUsed &
+            "): manifest updated, files unchanged")
+        else:
+          displaySuccess("std " & r.version & " (" & r.refUsed & "): " &
+            $r.count & " files in " & stdJsStore())
         return 0
       except CatchableError as e:
-        echo errPrefix() & " " & e.msg
+        displayError(e.msg)
       return 1
     of "list":
       if args.len > 1:
-        echo errPrefix() & " usage: carne std list"
+        displayError("usage: carne std list")
         return 1
       let s = stdStatus()
       if not s.found:
-        echo errPrefix() & " no JS stdlib installed (run `carne std init`)"
+        displayError("no JS stdlib installed (run `carne std init`)")
         return 1
       let at = if s.refUsed.len > 0: " (" & s.refUsed & ")" else: ""
-      echo "std " & s.version & at & ":"
+      displayInfo("std " & s.version & at & ":")
       for e in s.entries:
         let mark = if e.present: "installed" else: "missing"
-        echo "  " & e.name & "  " & grey(e.file & " (" & mark & ")")
+        display(span("  " & e.name & "  " & grey(e.file & " (" & mark & ")")))
       return 0
     else:
-      echo errPrefix() & " unknown std command `" & args[0] & "`"
+      displayError("unknown std command `" & args[0] & "`")
       printStdHelp()
       return 1
 
@@ -260,7 +267,7 @@ when isMainModule:
         of "yes", "Y":
           pkgYes = true
         else:
-          echo errPrefix() & " unknown option --" & key
+          displayError("unknown option --" & key)
           printHelp()
           return 1
       of cmdEnd:
@@ -278,7 +285,7 @@ when isMainModule:
     of "run":
       # run a .js script file
       if positionals.len == 0:
-        echo errPrefix() & " script is required"
+        displayError("script is required")
         printHelp()
         return 1
       let script = positionals[0]
@@ -297,7 +304,7 @@ when isMainModule:
       # default command: a bare script path runs like `run <script>`
       if positionals.len >= 0 and fileExists(command):
         return runScriptFile(command, positionals)
-      echo errPrefix() & " unknown command `" & command & "`"
+      displayError("unknown command `" & command & "`")
       printHelp()
       return 1
 

@@ -59,12 +59,30 @@ test "stdSync downloads and verifies from a registry":
   check r.version == "9.9.9"
   check r.refUsed == "main"
   check r.count == 1
+  check not r.upToDate
   check readFile(stdJsStore(home) / "a.js").contains("hello")
   let s = stdStatus(home)
   check s.found
   check s.version == "9.9.9"
   check s.refUsed == "main"
   check s.entries == @[(name: "a", file: "a.js", present: true)]
+
+test "second stdSync reports up to date without downloads":
+  let (base, home) = fakeRepo()
+  discard stdSync(home, base)
+  let r = stdSync(home, base)
+  check r.version == "9.9.9"
+  check r.count == 0
+  check r.upToDate
+
+test "stdSync repairs missing files":
+  let (base, home) = fakeRepo()
+  discard stdSync(home, base)
+  removeFile(stdJsStore(home) / "a.js")
+  let r = stdSync(home, base)
+  check r.count == 1
+  check not r.upToDate
+  check fileExists(stdJsStore(home) / "a.js")
 
 test "stdSync rejects checksum mismatches":
   let (base, home) = fakeRepo()

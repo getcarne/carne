@@ -11,6 +11,13 @@ const
   ansiBoldWhite = "\e[1;37m"
   ansiGrey = "\e[90m"
   ansiRed = "\e[31m"
+  ansiGreen = "\e[32m"
+  ansiYellow = "\e[33m"
+  ansiCyan = "\e[36m"
+
+type Span* = tuple[text: string, code: string]
+  ## One colored fragment for the display procs (kapsis-style, without
+  ## the termstyle dependency). code "" renders plain.
 
 proc useColor*(): bool =
   getEnv("NO_COLOR") == "" and getEnv("TERM") != "dumb"
@@ -27,8 +34,54 @@ proc label*(s: string): string =
 proc grey*(s: string): string =
   paint(s, ansiGrey)
 
-proc errPrefix*(): string =
-  paint("error:", ansiRed)
+proc span*(text: string, code = ""): Span =
+  ## Builds one display fragment (code "" for plain text).
+  (text, code)
+
+proc spansToStr*(xs: openArray[Span]): string =
+  ## Renders fragments back to back (callers embed their own spaces).
+  ## Empty codes pass through untouched (no stray reset sequences).
+  for x in xs:
+    if x.code.len == 0:
+      result.add(x.text)
+    else:
+      result.add(paint(x.text, x.code))
+
+proc display*(xs: varargs[Span]) =
+  ## Prints one plain row of fragments.
+  echo spansToStr(xs)
+
+proc displayError*(x: string) =
+  ## Prints an error message.
+  echo paint("Error:", ansiRed) & " " & x
+
+proc displayError*(xs: varargs[Span]) =
+  ## Prints an error message from fragments.
+  echo paint("Error:", ansiRed) & " " & spansToStr(xs)
+
+proc displayWarning*(x: string) =
+  ## Prints a warning message.
+  echo paint("Warning:", ansiYellow) & " " & x
+
+proc displayWarning*(xs: varargs[Span]) =
+  ## Prints a warning message from fragments.
+  echo paint("Warning:", ansiYellow) & " " & spansToStr(xs)
+
+proc displayInfo*(x: string) =
+  ## Prints an informational message.
+  echo paint("Info:", ansiCyan) & " " & x
+
+proc displayInfo*(xs: varargs[Span]) =
+  ## Prints an informational message from fragments.
+  echo paint("Info:", ansiCyan) & " " & spansToStr(xs)
+
+proc displaySuccess*(x: string) =
+  ## Prints a success message.
+  echo paint("Success:", ansiGreen) & " " & x
+
+proc displaySuccess*(xs: varargs[Span]) =
+  ## Prints a success message from fragments.
+  echo paint("Success:", ansiGreen) & " " & spansToStr(xs)
 
 proc findTestFiles*(root = "tests"): seq[string] =
   ## Recursive `*.test.js` discovery under root, sorted. Empty when

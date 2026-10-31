@@ -134,10 +134,12 @@ proc verifySha*(content, wantHex: string): bool =
   sha256Hex(content).toLowerAscii() == wantHex.strip().toLowerAscii()
 
 proc stdSync*(home = carneHome(); base = stdJsRepoBase):
-    tuple[version, refUsed: string, count: int] =
-  ## `carne std init` / `update`: resolves the ref, downloads the
-  ## manifest, then downloads and verifies every file into the store.
-  ## Writes the local manifest copy last. Raises IOError on failure.
+    tuple[version, refUsed: string, count: int, upToDate: bool] =
+  ## `carne std init` / `update`: resolves the ref, fetches the remote
+  ## manifest, then downloads only missing or changed files (verified
+  ## before each write). Writes the local manifest copy last. upToDate
+  ## is true when the local version already matched and nothing was
+  ## downloaded. Raises IOError on failure.
   let (refUsed, src) = fetchStdManifest(base)
   var m: StdManifest
   try:
@@ -145,19 +147,29 @@ proc stdSync*(home = carneHome(); base = stdJsRepoBase):
   except ValueError as e:
     raise newException(IOError, e.msg)
   m.refUsed = refUsed
+  let (localFound, local) = readLocalManifest(home)
   let dir = stdJsStore(home)
   createDir(dir)
   var names: seq[string] = @[]
   for name in m.files.keys:
     names.add(name)
+  var downloaded = 0
   for name in names:
     let entry = m.files[name]
+    let dest = dir / name & ".js"
+    if fileExists(dest):
+      try:
+        if verifySha(readFile(dest), entry.sha256):
+          continue
+      except IOError:
+        discard
     let url = base & "/" & refUsed & "/" & stdJsPath & "/" & entry.file
     let code = curlGet(url)
     if not verifySha(code, entry.sha256):
       raise newException(IOError, "checksum mismatch: \"" & entry.file &
         "\" (ref " & refUsed & ")")
-    writeFile(dir / name & ".js", code)
+    writeFile(dest, code)
+    inc downloaded
   var stored: JsonNode
   try:
     stored = parseJson(src)
@@ -165,7 +177,8 @@ proc stdSync*(home = carneHome(); base = stdJsRepoBase):
     raise newException(IOError, "manifest: invalid JSON (" & e.msg & ")")
   stored["ref"] = %refUsed
   writeFile(stdManifestPath(home), $stored)
-  (m.version, refUsed, names.len)
+  (m.version, refUsed, downloaded,
+    localFound and local.version == m.version and downloaded == 0)
 
 proc stdStatus*(home = carneHome()):
     tuple[found: bool, version, refUsed: string,
