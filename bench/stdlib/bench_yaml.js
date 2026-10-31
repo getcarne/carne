@@ -1,5 +1,4 @@
-// bench/stdlib/bench_yaml.js — std/yaml (embedded pure JS) vs yaml_js.js.
-// yaml_js.js is a non-shippable subset; the gap measures full-grammar cost.
+// bench/stdlib/bench_yaml.js — std/yaml (Nim/openparser) vs yaml_js.js.
 // Run: bin/carne run bench/stdlib/bench_yaml.js
 // Equivalence is asserted first; any mismatch throws before timing.
 var nim = require("std/yaml");
