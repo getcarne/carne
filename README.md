@@ -144,7 +144,7 @@ processing, crypto, networking, and developer tools:
 - `std/env` - process info and environment (args, getenv, cwd, exit)
 - `std/os` - synchronous OS utilities (files, dirs, sleep, exec)
 - Timers - `setTimeout`/`setInterval` globals, no require needed
-- `std/yaml` - YAML parsing and serialization
+- `std/yaml` - YAML parsing and serialization (pure JS)
 - `std/toml` - TOML parsing and serialization
 - `std/ical` - iCalendar parsing and serialization
 - `std/dotenv` - `.env` file parsing with variable expansion
