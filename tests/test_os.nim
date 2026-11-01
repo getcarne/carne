@@ -38,6 +38,80 @@ test "os read missing throws":
   expect CarneError:
     discard runCode("require('std/os').readFile('/no/such/carne_file_xyz')")
 
+test "os readFile maps large files identically":
+  let p = tmpPath("big.txt")
+  defer: removeFile(p)
+  var want = newString(200 * 1024)
+  for i in 0 ..< want.len:
+    want[i] = char(ord('a') + (i mod 26))
+  writeFile(p, want)
+  check runCode("require('std/os').readFile('" & p & "').length") ==
+    $want.len
+  check runCode(
+    "const s = require('std/os').readFile('" & p & "'); " &
+    "s.slice(0, 3) + ':' + s.slice(-3)") == "abc:vwx"
+
+test "os readFile empty file":
+  let p = tmpPath("empty.txt")
+  defer: removeFile(p)
+  writeFile(p, "")
+  check runCode("require('std/os').readFile('" & p & "')") == ""
+
+test "os readFileBytes returns a Uint8Array":
+  let p = tmpPath("bytes.txt")
+  defer: removeFile(p)
+  writeFile(p, "hi")
+  check runCode(
+    "require('std/os').readFileBytes('" & p & "') instanceof Uint8Array") ==
+    "true"
+  check runCode(
+    "JSON.stringify(Array.from(require('std/os').readFileBytes('" &
+    p & "')))") == "[104,105]"
+
+test "os readFileBytes maps large files without copying":
+  let p = tmpPath("big.bin")
+  defer: removeFile(p)
+  var want = newString(200 * 1024)
+  var sum = 0
+  for i in 0 ..< want.len:
+    want[i] = char(i mod 251)
+    sum += i mod 251
+  writeFile(p, want)
+  check runCode(
+    "require('std/os').readFileBytes('" & p & "').length") == $want.len
+  check runCode(
+    "const b = require('std/os').readFileBytes('" & p & "'); " &
+    "let s = 0; for (let i = 0; i < b.length; i++) s += b[i]; s") == $sum
+  check runCode(
+    "const b = require('std/os').readFileBytes('" & p & "'); " &
+    "b[0] + ',' + b[1] + ',' + b[b.length - 1]") ==
+    $(0 mod 251) & "," & $(1 mod 251) & "," & $((want.len - 1) mod 251)
+
+test "os readFileBytes preserves all byte values":
+  let p = tmpPath("allbytes.bin")
+  defer: removeFile(p)
+  var want = newString(256)
+  for i in 0 ..< 256:
+    want[i] = char(i)
+  writeFile(p, want)
+  check runCode(
+    "const b = require('std/os').readFileBytes('" & p & "'); " &
+    "b.length + ',' + b[0] + ',' + b[128] + ',' + b[255]") ==
+    "256,0,128,255"
+
+test "os readFileBytes empty file is empty":
+  let p = tmpPath("empty.bin")
+  defer: removeFile(p)
+  writeFile(p, "")
+  check runCode(
+    "const b = require('std/os').readFileBytes('" & p & "'); " &
+    "(b instanceof Uint8Array) && b.length") == "0"
+
+test "os readFileBytes missing throws":
+  expect CarneError:
+    discard runCode(
+      "require('std/os').readFileBytes('/no/such/carne_file_xyz')")
+
 test "os exists, isFile and isDir":
   let p = tmpPath("ex.txt")
   defer: removeFile(p)

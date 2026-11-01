@@ -2,6 +2,7 @@
 #
 #   const os = require("std/os");
 #   os.readFile(path)         -> string (throws on IOError)
+#   os.readFileBytes(path)    -> Uint8Array (mmap zero-copy, throws on IOError)
 #   os.writeFile(path, data)  -> undefined
 #   os.appendFile(path, data) -> undefined
 #   os.exists(path)           -> bool (files and dirs)
@@ -25,7 +26,7 @@
 # Everything throws a JS Error on failure. sleep and exec block the
 # event loop like any sync call: fine in scripts, stalls servers.
 
-import std/[algorithm, json, os, osproc, times]
+import std/[algorithm, json, memfiles, os, osproc, times]
 
 import javascriptcore
 
@@ -78,6 +79,39 @@ proc removeDirRecursive(path: string) =
     removeDir(d)
   removeDir(path)
 
+const mmapThreshold = 64 * 1024
+  ## readFile maps instead of reading past this size: below it the
+  ## mmap syscall + page-table cost exceeds one streaming read, and
+  ## the bridge string snapshot (~1us/KB) dominates either way.
+
+proc readFileFast(path: string): string =
+  ## readFile with an mmap fast path for large regular files. Small,
+  ## empty and non-mappable inputs (pipes, proc, dirs) fall back to
+  ## readFile, so errors stay byte-identical to the plain call. Raises
+  ## IOError/OSError like readFile.
+  let size =
+    try:
+      getFileSize(path)
+    except OSError:
+      return readFile(path)
+  if size <= mmapThreshold:
+    return readFile(path)
+  var mf: MemFile
+  try:
+    mf = memfiles.open(path)
+  except OSError:
+    return readFile(path)
+  try:
+    if mf.size <= 0:
+      result = readFile(path)
+    else:
+      # Immediate copy + close keeps the truncate-SIGBUS window tiny;
+      # the mapping never outlives this call.
+      result = newString(mf.size)
+      copyMem(addr result[0], mf.mem, mf.size)
+  finally:
+    mf.close()
+
 ## Builds the std/os namespace object.
 init proc(module: Module) =
   exportObject:
@@ -85,12 +119,50 @@ init proc(module: Module) =
     module.registerFn readFile(path: string):
       ## os.readFile(path) -> string (throws on IOError)
       try:
-        toJS(ctx, readFile(path))
+        toJS(ctx, readFileFast(path))
       except IOError as e:
         throwError(ctx, "readFile: " & e.msg, exception)
         nil
       except OSError as e:
         throwError(ctx, "readFile: " & e.msg, exception)
+        nil
+
+    module.registerFn readFileBytes(path: string):
+      ## os.readFileBytes(path) -> Uint8Array (mmap zero-copy, throws on IOError)
+      try:
+        when not defined(windows):
+          let size =
+            try:
+              getFileSize(path)
+            except OSError:
+              return toJSUint8Copy(ctx, readFile(path), "readFileBytes",
+                exception)
+          if size <= 0:
+            return toJSUint8Copy(ctx, readFile(path), "readFileBytes",
+              exception)
+          var mf: MemFile
+          try:
+            mf = memfiles.open(path)
+          except OSError:
+            return toJSUint8Copy(ctx, readFile(path), "readFileBytes",
+              exception)
+          if mf.size <= 0:
+            mf.close()
+            return toJSUint8Copy(ctx, readFile(path), "readFileBytes",
+              exception)
+          # Ownership moves to JSC (munmap on GC): never close mf
+          # past this point, on success or failure.
+          let m = mf.mem
+          let s = mf.size
+          return toJSUint8Mmap(ctx, m, s, "readFileBytes", exception)
+        else:
+          return toJSUint8Copy(ctx, readFile(path), "readFileBytes",
+            exception)
+      except IOError as e:
+        throwError(ctx, "readFileBytes: " & e.msg, exception)
+        nil
+      except OSError as e:
+        throwError(ctx, "readFileBytes: " & e.msg, exception)
         nil
 
     module.registerFn writeFile(path: string, data: string):
@@ -108,7 +180,7 @@ init proc(module: Module) =
     module.registerFn appendFile(path: string, data: string):
       ## os.appendFile(path, data) -> undefined
       try:
-        var f = open(path, fmAppend)
+        var f = system.open(path, fmAppend)
         try:
           f.write(data)
         finally:

@@ -14,6 +14,9 @@ import pkg/openparser/json
 
 import javascriptcore
 
+when not defined(windows):
+  import std/posix
+
 when defined(linux):
   # WebKitGTK declares JSValueRef as `const struct OpaqueJSValue*` while the
   # bindings use a non-const pointer, so every `exception: ptr JSValueRef`
@@ -160,6 +163,80 @@ proc setPropChecked*(ctx: JSContextRef; obj: JSObjectRef; name: string;
     throwError(ctx, fname & ": could not convert result to JS", exception)
     return false
   true
+
+when not defined(windows):
+  type MmapBytesCtx = object
+    ## Owned mapping behind a mmap-backed Uint8Array: freed by the
+    ## JSC deallocator below, never touched after hand-off.
+    mem: pointer
+    size: int
+
+  proc mmapBytesDealloc(bytes: pointer; ctx: pointer) {.cdecl.} =
+    ## JSC bytes deallocator: unmaps and frees the context. Runs on GC
+    ## (and even on failed construction), so it never raises and
+    ## ignores errors.
+    if ctx != nil:
+      let c = cast[ptr MmapBytesCtx](ctx)
+      if c.mem != nil and c.size > 0:
+        discard posix.munmap(c.mem, c.size)
+      dealloc(c)
+
+proc copyBytesDealloc(bytes: pointer; ctx: pointer) {.cdecl.} =
+  ## JSC bytes deallocator for heap copies (see toJSUint8Copy).
+  if bytes != nil:
+    dealloc(bytes)
+
+proc toJSUint8Copy*(ctx: JSContextRef; s: string; name: string;
+    exception: ptr JSValueRef): JSValueRef =
+  ## Copies s into a heap buffer owned by the Uint8Array (freed on
+  ## GC). Fallback for files mmap cannot cover (empty, pipes, proc).
+  ## nil + JS throw on failure.
+  var ex: JSValueRef = nil
+  if s.len == 0:
+    let arr = JSObjectMakeTypedArray(ctx, kJSTypedArrayTypeUint8Array,
+      0, addr ex)
+    if ex != nil or arr == nil:
+      throwError(ctx, name & ": could not convert result to JS",
+        exception)
+      return nil
+    return arr
+  let buf = alloc(s.len)
+  copyMem(buf, unsafeAddr s[0], s.len)
+  result = JSObjectMakeTypedArrayWithBytesNoCopy(ctx,
+    kJSTypedArrayTypeUint8Array, buf, csize_t(s.len),
+    copyBytesDealloc, nil, addr ex)
+  if ex != nil or result == nil:
+    throwError(ctx, name & ": could not convert result to JS",
+      exception)
+    return nil
+
+when not defined(windows):
+  proc toJSUint8Mmap*(ctx: JSContextRef; mem: pointer; byteLen: int;
+      name: string; exception: ptr JSValueRef): JSValueRef =
+    ## Wraps an mmap'd region as a Uint8Array, transferring ownership
+    ## to JSC (munmap runs on GC). The caller must never touch mem or
+    ## close the mapping afterwards, on success or failure (JSC runs
+    ## the deallocator even when construction fails). nil + JS throw
+    ## on failure.
+    var ex: JSValueRef = nil
+    if byteLen <= 0:
+      let arr = JSObjectMakeTypedArray(ctx, kJSTypedArrayTypeUint8Array,
+        0, addr ex)
+      if ex != nil or arr == nil:
+        throwError(ctx, name & ": could not convert result to JS",
+          exception)
+        return nil
+      return arr
+    let c = cast[ptr MmapBytesCtx](create(MmapBytesCtx))
+    c.mem = mem
+    c.size = byteLen
+    result = JSObjectMakeTypedArrayWithBytesNoCopy(ctx,
+      kJSTypedArrayTypeUint8Array, mem, csize_t(byteLen),
+      mmapBytesDealloc, c, addr ex)
+    if ex != nil or result == nil:
+      throwError(ctx, name & ": could not convert result to JS",
+        exception)
+      return nil
 
 proc makeJSArray*(ctx: JSContextRef;
     vals: openArray[JSValueRef]): JSValueRef =
