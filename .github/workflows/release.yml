@@ -13,5 +13,5 @@ jobs:
       app-name: carne
       target-matrix: '[{"os":"ubuntu-latest","arch":"x86_64"},{"os":"ubuntu-24.04-arm","arch":"arm64"},{"os":"macos-14","arch":"arm64"},{"os":"macos-15-intel","arch":"x86_64"}]'
       pre-build-command: |
-        if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update && sudo apt-get install -y libjavascriptcoregtk-4.1-dev libssl-dev libpq-dev; fi
+        if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update && sudo apt-get install -y libjavascriptcoregtk-4.1-dev libssl-dev; fi
       extra-files: 'LICENSE README.md'
