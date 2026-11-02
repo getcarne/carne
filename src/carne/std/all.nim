@@ -30,6 +30,7 @@ import ./svg
 import ./http
 import ./ws
 import ./uuid
+import ./db
 
 registerStd("std/env", env.install)
 registerStd("std/os", os.install)
@@ -55,3 +56,4 @@ registerStd("std/svg", svg.install)
 registerStd("std/http", http.install)
 registerStd("std/ws", ws.install)
 registerStd("std/uuid", uuid.install)
+registerStd("std/db/driver", db.installDriver)

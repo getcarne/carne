@@ -175,6 +175,7 @@ processing, crypto, networking, and developer tools:
 - `std/ws` - async + sync WebSocket client and server
 - `std/uuid` - UUID generation (v1-v8) and inspection
 - `std/test` - minimal test runner (test/describe/expect/assert, fetched via `carne std init`)
+- `std/db` - async + sync database driver and ORM (sqlite, postgres, fetched via `carne std init`)
 
 Full API reference with examples: https://openpeeps.github.io/carne/
 
@@ -188,6 +189,7 @@ Full API reference with examples: https://openpeeps.github.io/carne/
 - [x] `std/ws` (async + sync client, server, binary/ping/protocol, `wss://` client)
 - [x] `std/http` workers (cluster-style threads, `process.isWorker`)
 - [x] `std/uuid` (v1-v8 generation, parse/inspect, RFC namespace constants)
+- [x] `std/db` (async + sync driver, fluent builder, models, migrations; sqlite + postgres)
 - [x] Lazy startup (deferred event loop, per-run TLS, cached spec data)
 - [x] Benchmark suite + results
 - [ ] Top-level await in scripts (currently needs an async IIFE)

@@ -34,7 +34,7 @@ const stdJsPath* = "src/carne/std/js"
 
 const stdManifestFile* = "manifest.json"
 
-const stdKnownJs*: array[3, string] = ["colors", "str", "test"]
+const stdKnownJs*: array[4, string] = ["colors", "str", "test", "db"]
   ## Well-known JS modules. Hint quality on fresh installs only; the
   ## fetched manifest is authoritative once present.
 

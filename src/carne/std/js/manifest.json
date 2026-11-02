@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "files": {
     "colors": {
       "file": "colors.js",
@@ -12,6 +12,10 @@
     "test": {
       "file": "test.js",
       "sha256": "77f1aef8df484f5c6ec7f02c63c9c150f6a4ffaf8bc8ca3d50a830bcfc7d2280"
+    },
+    "db": {
+      "file": "db.js",
+      "sha256": "45d73f3b1d67573f48437246564ea13a94dfa9f4eab4d155c5874af271773b1f"
     }
   }
 }
