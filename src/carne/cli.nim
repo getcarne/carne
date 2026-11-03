@@ -56,6 +56,24 @@ proc spinnerActive*(): bool =
   ## True while a spinner animates on this process.
   spinAlive.load(moRelaxed)
 
+proc isTty*(): bool =
+  ## True when stdout is a terminal (banners and animation gate on
+  ## this; pipes get plain output).
+  stdout.isatty()
+
+const bannerArt = """
+[0;91;41m█▓[0;90m▀[0;31m▀██[0;37m [0;91;41m█▓[0;90m▀[0;31m▀[0;91;41m  [0;37m [0;91;41m█▓[0;90m▀[0;31m▀[0;91;41m  [0;37m [0;91;41m█▓[0;90m▀[0;31m▀[0;91;41m  [0;37m [0;91;41m█▓[0;90m▀[0;31m▀██[0m
+[0;91;41m▓▒[0;37m     [0;91;41m▓▒[0;97m  [0;91;41m ░[0;37m [0;91;41m▓▒[0;90m▄[0;31m▄[0;91;41m ░[0;37m [0;91;41m▓▒[0;97m  [0;91;41m ░[0;37m [0;91;41m▓▒[0;37m    [0m
+[0;91;41m▒░[0;37m     [0;91;41m▒░[0;90m▀[0;31m▀[0;91;41m░▒[0;37m [0;91;41m▒░[0;90m▀[0;31m▄[0;37m   [0;91;41m▒░[0;97m  [0;91;41m░▒[0;37m [0;91;41m▒░[0;90m▀[0;37m   [0m
+[0;91;41m░ [0;37m     [0;91;41m░ [0;97m  [0;91;41m▒▓[0;37m [0;91;41m░ [0;97m  [0;91;41m▒▓[0;37m [0;91;41m░ [0;97m  [0;91;41m▒▓[0;37m [0;91;41m░ [0;37m    [0m
+[0;91;41m  [0;90m▄[0;31m▄[0;91;41m▓[0;91m█[0;37m [0;91;41m  [0;97m  [0;91;41m▓█[0;37m [0;91;41m  [0;97m  [0;91;41m▓█[0;37m [0;91;41m  [0;97m  [0;91;41m▓█[0;37m [0;91;41m  [0;90m▄[0;31m▄[0;91;41m▓█[0m
+    """
+
+proc printBanner*() =
+  ## Carne ASCII banner. TTY only: raw ANSI art stays off pipes.
+  if isTty():
+    echo bannerArt
+
 proc clearSpinLine() =
   ## Erases the in-progress spinner row. No-op without a spinner.
   if spinnerActive():
@@ -133,7 +151,7 @@ type Spinner* = object
 proc startSpinner*(msg: string): Spinner =
   ## Animates `msg` on a TTY. Idle otherwise (callers fall back to
   ## plain log lines, which the datpkgr callback already emits).
-  if not stdout.isatty():
+  if not isTty():
     return Spinner(running: false)
   spinAlive.store(true, moRelaxed)
   try:
@@ -207,6 +225,7 @@ proc resolveTestArg*(arg: string; root = "tests"): string =
   ""
 
 proc printHelp*() =
+  printBanner()
   echo grey("A JavaScript runtime in Nim")
   echo grey("  (c) OpenPeeps | MIT License")
   echo grey("  Build Version: " & versionStr)
