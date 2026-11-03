@@ -2,7 +2,7 @@
 #
 # Colors are disabled under NO_COLOR or TERM=dumb.
 
-import std/[os, strutils, algorithm]
+import std/[os, strutils, algorithm, atomics, terminal]
 
 const versionStr* = "0.1.0"
 
@@ -47,41 +47,133 @@ proc spansToStr*(xs: openArray[Span]): string =
     else:
       result.add(paint(x.text, x.code))
 
+var spinAlive: Atomic[bool]
+  ## Set while a spinner thread animates. Display procs clear the
+  ## spinner row before printing so progress lines never interleave
+  ## with the animation.
+
+proc spinnerActive*(): bool =
+  ## True while a spinner animates on this process.
+  spinAlive.load(moRelaxed)
+
+proc clearSpinLine() =
+  ## Erases the in-progress spinner row. No-op without a spinner.
+  if spinnerActive():
+    stdout.write("\r\e[K")
+    stdout.flushFile()
+
 proc display*(xs: varargs[Span]) =
   ## Prints one plain row of fragments.
+  clearSpinLine()
   echo spansToStr(xs)
 
 proc displayError*(x: string) =
   ## Prints an error message.
+  clearSpinLine()
   echo paint("Error:", ansiRed) & " " & x
 
 proc displayError*(xs: varargs[Span]) =
   ## Prints an error message from fragments.
+  clearSpinLine()
   echo paint("Error:", ansiRed) & " " & spansToStr(xs)
 
 proc displayWarning*(x: string) =
   ## Prints a warning message.
+  clearSpinLine()
   echo paint("Warning:", ansiYellow) & " " & x
 
 proc displayWarning*(xs: varargs[Span]) =
   ## Prints a warning message from fragments.
+  clearSpinLine()
   echo paint("Warning:", ansiYellow) & " " & spansToStr(xs)
 
 proc displayInfo*(x: string) =
   ## Prints an informational message.
+  clearSpinLine()
   echo paint("Info:", ansiCyan) & " " & x
 
 proc displayInfo*(xs: varargs[Span]) =
   ## Prints an informational message from fragments.
+  clearSpinLine()
   echo paint("Info:", ansiCyan) & " " & spansToStr(xs)
 
 proc displaySuccess*(x: string) =
   ## Prints a success message.
+  clearSpinLine()
   echo paint("Success:", ansiGreen) & " " & x
 
 proc displaySuccess*(xs: varargs[Span]) =
   ## Prints a success message from fragments.
+  clearSpinLine()
   echo paint("Success:", ansiGreen) & " " & spansToStr(xs)
+
+const spinFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+  ## Braille spinner frames (kapsis preloader style, dependency-free).
+
+type SpinArgs = object
+  msg: string
+  colored: bool
+
+proc spinLoop(a: SpinArgs) {.thread.} =
+  ## Spinner thread: redraws one row until `spinAlive` drops.
+  var i = 0
+  while spinAlive.load(moRelaxed):
+    let frame =
+      if a.colored: ansiCyan & spinFrames[i] & ansiReset
+      else: spinFrames[i]
+    stdout.write("\r" & frame & " " & a.msg)
+    stdout.flushFile()
+    sleep(80)
+    i = (i + 1) mod spinFrames.len
+
+type Spinner* = object
+  thread: Thread[SpinArgs]
+  running*: bool
+
+proc startSpinner*(msg: string): Spinner =
+  ## Animates `msg` on a TTY. Idle otherwise (callers fall back to
+  ## plain log lines, which the datpkgr callback already emits).
+  if not stdout.isatty():
+    return Spinner(running: false)
+  spinAlive.store(true, moRelaxed)
+  try:
+    createThread(result.thread, spinLoop,
+      SpinArgs(msg: msg, colored: useColor()))
+    result.running = true
+  except CatchableError:
+    spinAlive.store(false, moRelaxed)
+
+proc stopSpinner*(s: var Spinner) =
+  ## Stops the animation and erases the spinner row.
+  if not s.running:
+    return
+  s.running = false
+  spinAlive.store(false, moRelaxed)
+  joinThread(s.thread)
+  stdout.write("\r\e[K")
+  stdout.flushFile()
+
+template withSpinner*(msg: string; body: untyped): untyped =
+  ## Runs body while `msg` animates on a TTY (plain log lines
+  ## otherwise). Exceptions propagate after the spinner stops.
+  block:
+    var spinState = startSpinner(msg)
+    try:
+      body
+    finally:
+      stopSpinner(spinState)
+
+proc confirm*(question: string): bool =
+  ## y/N prompt, default no. False when stdin is not a TTY or on
+  ## EOF, so scripts and pipes never confirm destructively.
+  if not stdin.isatty():
+    return false
+  stdout.write(question & " [y/N]: ")
+  stdout.flushFile()
+  try:
+    result = stdin.readLine().strip().toLowerAscii() in ["y", "yes"]
+  except EOFError, IOError:
+    result = false
 
 proc findTestFiles*(root = "tests"): seq[string] =
   ## Recursive `*.test.js` discovery under root, sorted. Empty when
@@ -132,11 +224,11 @@ proc printHelp*() =
   echo ""
   echo label("Packages")
   echo "  pkg install <spec>      " & grey("install a package by name, git URL (--url=... pins a source URL)")
-  echo "  pkg remove <name> [ver] " & grey("uninstall a package (one version, or all)")
+  echo "  pkg remove <name> [ver] [--yes] " & grey("uninstall a package (one version, or all)")
   echo "  pkg update [name]       " & grey("update one package, or all when omitted")
   echo "  pkg list                " & grey("list installed packages")
   echo "  pkg develop <path>      " & grey("editable install from a local directory")
-  echo "  pkg prune               " & grey("remove orphaned packages")
+  echo "  pkg prune [--yes]       " & grey("remove orphaned packages")
   echo "  pkg refresh             " & grey("re-download registry data")
   echo "  pkg publish [opts]      " & grey("open a PR adding this package to the registry")
   echo ""

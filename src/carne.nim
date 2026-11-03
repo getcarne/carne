@@ -41,11 +41,11 @@ when isMainModule:
     echo "usage: carne pkg <install|remove|update|list|develop|prune|refresh|publish> [args]"
     echo ""
     echo "  install <spec> [--url=...]  " & grey("registry name, git URL, gh:user/repo alias, name#ref, or name + source URL")
-    echo "  remove <name> [version]     " & grey("uninstall one version, or all versions")
+    echo "  remove <name> [version] [--yes] " & grey("uninstall one version, or all versions")
     echo "  update [name]               " & grey("update one package, or all")
     echo "  list                        " & grey("list installed packages")
     echo "  develop [path]              " & grey("editable install from a local directory (default: current dir)")
-    echo "  prune                       " & grey("remove orphaned packages")
+    echo "  prune [--yes]               " & grey("remove orphaned packages")
     echo "  refresh                     " & grey("re-download registry data")
     echo "  publish [--tags=..] [--web=..] [--url=..] [--dry-run] [--yes] " & grey("open a PR adding this package to the registry")
 
@@ -66,8 +66,9 @@ when isMainModule:
         displayError("only one package allowed")
         return 1
       try:
-        if cfg.pkgInstall(args[1], url = pkgUrl):
-          return 0
+        withSpinner("Installing packages..."):
+          if cfg.pkgInstall(args[1], url = pkgUrl):
+            return 0
       except CatchableError as e:
         displayError(e.msg)
       return 1
@@ -77,9 +78,14 @@ when isMainModule:
         printPkgHelp()
         return 1
       if args.len > 3:
-        displayError("usage: carne pkg remove <name> [version]")
+        displayError("usage: carne pkg remove <name> [version] [--yes]")
         return 1
       let version = if args.len > 2: args[2] else: ""
+      let what = args[1] & (if version.len > 0: "@" & version
+        else: " (all versions)")
+      if not pkgYes and not confirm("Remove " & what & "?"):
+        displayInfo("aborted")
+        return 1
       try:
         if cfg.pkgRemove(args[1], version):
           return 0
@@ -92,8 +98,9 @@ when isMainModule:
         return 1
       let name = if args.len > 1: args[1] else: ""
       try:
-        if cfg.pkgUpdate(name):
-          return 0
+        withSpinner("Updating packages..."):
+          if cfg.pkgUpdate(name):
+            return 0
       except CatchableError as e:
         displayError(e.msg)
       return 1
@@ -116,16 +123,21 @@ when isMainModule:
         displayError(e.msg)
       return 1
     of "prune":
+      if not pkgYes and not confirm("Prune orphaned packages?"):
+        displayInfo("aborted")
+        return 1
       try:
-        cfg.pkgPrune()
+        withSpinner("Pruning orphaned packages..."):
+          cfg.pkgPrune()
         return 0
       except CatchableError as e:
         displayError(e.msg)
       return 1
     of "refresh":
       try:
-        if cfg.refreshAllSources():
-          return 0
+        withSpinner("Refreshing registry..."):
+          if cfg.refreshAllSources():
+            return 0
       except CatchableError as e:
         displayError(e.msg)
       return 1

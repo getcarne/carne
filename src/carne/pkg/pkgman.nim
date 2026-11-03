@@ -16,6 +16,7 @@
 
 import std/[algorithm, json, options, os, sequtils, strutils, tables]
 import pkg/datpkgr/[config, install, operations, store, types]
+import ../cli
 import ./pkgmanifest
 
 export config, install, operations, store, types
@@ -33,15 +34,20 @@ proc carneHome*(): string =
   getEnv("CARNE_HOME", getHomeDir() / ".carne")
 
 proc carneLogCb(level: LogLevel, msg: string) {.gcsafe.} =
+  ## datpkgr log levels through the CLI display procs, so pkg output
+  ## carries the same colors as the rest of the CLI (Info: cyan,
+  ## Success: green, Warning: yellow, Error: red).
   case level
   of lvlDebug:
     stderr.writeLine("[pkg] " & msg)
-  of lvlInfo, lvlSuccess:
-    echo msg
+  of lvlInfo:
+    displayInfo(msg)
+  of lvlSuccess:
+    displaySuccess(msg)
   of lvlWarn:
-    stderr.writeLine("warning: " & msg)
+    displayWarning(msg)
   of lvlError:
-    stderr.writeLine("error: " & msg)
+    displayError(msg)
 
 proc ensurePkgSource*(cfg: DatpkgrConfig) =
   ## Make sure the carne registry source is registered. Fresh homes get
