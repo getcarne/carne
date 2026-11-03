@@ -43,8 +43,9 @@ test "crypto aead tamper and wrong key throw":
     discard runCode(
       "const c = require('std/crypto').aead;" &
       "const k = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';" &
-      "const e = c.seal('x', k); e.cipher = 'ff' + e.cipher.slice(2);" &
-      "c.open(e, k)")
+      "const e = c.seal('x', k); " &
+      "e.cipher = (e.cipher.startsWith('ff') ? '00' : 'ff') + " &
+      "e.cipher.slice(2); c.open(e, k)")
   expect CarneError:
     discard runCode(
       "const c = require('std/crypto').aead;" &

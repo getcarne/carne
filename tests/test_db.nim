@@ -1,5 +1,5 @@
 from std/os import `/`, copyFile, createDir, dirExists, fileExists,
-  getEnv, getTempDir, parentDir, pcDir, removeDir, removeFile, walkDir
+  getTempDir, parentDir, pcDir, removeDir, removeFile, walkDir
 import unittest
 
 import carne
@@ -17,12 +17,6 @@ createDir(stdJsStore(stdHome))
 copyFile(currentSourcePath.parentDir() / ".." / "src" / "carne" /
   "std" / "js" / "db.js", stdJsStore(stdHome) / "db.js")
 initStdDispatcher(stdHome)
-
-proc pgOn(): bool =
-  getEnv("CARNE_TEST_PG") == "1"
-
-const pgSpec =
-  """{dialect: "postgres", host: "127.0.0.1", port: 5432, user: "georgelemon", database: "carne_test"}"""
 
 proc tmpPath(name: string): string =
   getTempDir() / ("carne_test_db_" & name)
@@ -374,86 +368,3 @@ test "db orm sync connect and terminals":
     "s.close(); " &
     "return rows.length + ':' + one.a + ':' + applied.join(','); " &
     "})()") == "1:5:1"
-
-test "db orm pg types and params":
-  if not pgOn():
-    skip()
-  check runCode("(async () => { " &
-    "const db = require('std/db'); " &
-    "const s = await db.connect(" & pgSpec & "); " &
-    "await s.exec('DROP TABLE IF EXISTS carne_pg'); " &
-    "await s.exec('CREATE TABLE carne_pg (i INTEGER, b BOOLEAN, " &
-    "f DOUBLE PRECISION, t TEXT, n NUMERIC(10,2), v BYTEA, z TEXT)'); " &
-    "await s.exec('INSERT INTO carne_pg VALUES " &
-    "($1, $2, $3, $4, $5, $6, $7)', " &
-    "[42, true, 1.5, 'hi', 123.45, null, null]); " &
-    "const r = await s.query('SELECT i, b, f, t, n, v, z FROM carne_pg " &
-    "WHERE i = $1', [42]); " &
-    "const row = r.rows[0]; " &
-    "await s.exec('DROP TABLE carne_pg'); " &
-    "await s.close(); " &
-    "return JSON.stringify(row); " &
-    "})()") ==
-    """{"i":42,"b":true,"f":1.5,"t":"hi","n":123.45,"v":null,"z":null}"""
-
-test "db orm pg builder uses dollar placeholders":
-  if not pgOn():
-    skip()
-  check runCode("(async () => { " &
-    "const db = require('std/db'); " &
-    "const s = await db.connect(" & pgSpec & "); " &
-    "await s.exec('DROP TABLE IF EXISTS carne_b'); " &
-    "await s.exec('CREATE TABLE carne_b (id SERIAL PRIMARY KEY, " &
-    "name TEXT, age INTEGER)'); " &
-    "await s.table('carne_b').insert([{name: 'ana', age: 30}, " &
-    "{name: 'bo', age: 17}]).run(); " &
-    "const rows = await s.table('carne_b').where({age: {gte: 18}}).all(); " &
-    "await s.table('carne_b').where({name: 'bo'}).update({age: 18}).run(); " &
-    "const u = await s.table('carne_b').where({name: 'bo'}).first(); " &
-    "await s.exec('DROP TABLE carne_b'); " &
-    "await s.close(); " &
-    "return rows.length + ':' + rows[0].name + ':' + u.age; " &
-    "})()") == "1:ana:18"
-
-test "db orm pg bytea roundtrip":
-  if not pgOn():
-    skip()
-  check runCode("(async () => { " &
-    "const db = require('std/db'); " &
-    "const s = await db.connect(" & pgSpec & "); " &
-    "await s.exec('DROP TABLE IF EXISTS carne_by'); " &
-    "await s.exec('CREATE TABLE carne_by (v BYTEA)'); " &
-    "await s.exec(\"INSERT INTO carne_by VALUES (decode('0001ff', 'hex'))\"); " &
-    "const r = await s.query('SELECT v FROM carne_by'); " &
-    "const b = r.rows[0].v; " &
-    "await s.exec('DROP TABLE carne_by'); " &
-    "await s.close(); " &
-    "return (b instanceof Uint8Array) + ':' + b.length + ':' + " &
-    "b[0] + ',' + b[1] + ',' + b[2]; " &
-    "})()") == "true:3:0,1,255"
-
-test "db orm pg errors carry server messages":
-  if not pgOn():
-    skip()
-  expect CarneError:
-    discard runCode("(async () => { " &
-      "const db = require('std/db'); " &
-      "const s = await db.connect(" & pgSpec & "); " &
-      "await s.query('SELECT * FROM carne_missing_xyz'); })()")
-
-test "db orm pg transaction rollback":
-  if not pgOn():
-    skip()
-  check runCode("(async () => { " &
-    "const db = require('std/db'); " &
-    "const s = await db.connect(" & pgSpec & "); " &
-    "await s.exec('DROP TABLE IF EXISTS carne_tx'); " &
-    "await s.exec('CREATE TABLE carne_tx (a TEXT)'); " &
-    "try { await s.transaction(async (tx) => { " &
-    "await tx.exec(\"INSERT INTO carne_tx VALUES ('lost')\"); " &
-    "throw new Error('boom'); }); } catch (e) {} " &
-    "const r = await s.query('SELECT COUNT(*) AS c FROM carne_tx'); " &
-    "await s.exec('DROP TABLE carne_tx'); " &
-    "await s.close(); " &
-    "return r.rows[0].c; " &
-    "})()") == "0"

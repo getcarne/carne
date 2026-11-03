@@ -21,15 +21,16 @@
 # `await` composes with fetch/ws/timers; the loop is blocked during the
 # call itself (fast local IO for sqlite, network RTTs for postgres).
 # Sync fns block and return directly (ws.connectSync precedent).
-# Needs a libpq client library for postgres (ships with postgres;
-# Linux: libpq5); sqlite links the system sqlite3.
+# libpq loads lazily at runtime (./pgdyn): machines without a postgres
+# client run sqlite fine; only postgres connects need it (macOS:
+# brew install libpq, Linux: libpq5). sqlite links the system sqlite3.
 
 import std/[math, strutils, tables]
 
 import javascriptcore
 
 import pkg/db_connector/sqlite3
-import pkg/db_connector/postgres
+import ./pgdyn
 import pkg/openparser/sql
 
 import powpow/loop
