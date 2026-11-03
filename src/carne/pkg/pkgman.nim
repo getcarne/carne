@@ -36,12 +36,17 @@ proc carneHome*(): string =
 proc carneLogCb(level: LogLevel, msg: string) {.gcsafe.} =
   ## datpkgr log levels through the CLI display procs, so pkg output
   ## carries the same colors as the rest of the CLI (Info: cyan,
-  ## Success: green, Warning: yellow, Error: red).
+  ## Success: green, Warning: yellow, Error: red). Continuation lines
+  ## (datpkgr's 2-space indent: tree entries, resolved packages,
+  ## fetch events) print bare at 8 spaces with no label.
   case level
   of lvlDebug:
     stderr.writeLine("[pkg] " & msg)
   of lvlInfo:
-    displayInfo(msg)
+    if msg.startsWith("  "):
+      display(span("      " & msg))
+    else:
+      displayInfo(msg)
   of lvlSuccess:
     displaySuccess(msg)
   of lvlWarn:
