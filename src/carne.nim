@@ -31,7 +31,6 @@ when isMainModule:
       return 1
 
   proc printPkgHelp() =
-    printBanner()
     echo "usage: carne pkg <install|remove|update|list|develop|prune|refresh|publish> [args]"
     echo ""
     echo "  install <spec> [--url=...]  " & grey("registry name, git URL, gh:user/repo alias, name#ref, or name + source URL")
