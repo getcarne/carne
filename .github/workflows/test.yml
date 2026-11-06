@@ -4,11 +4,6 @@ jobs:
   test:
     uses: nimbase/setup-nim-action/.github/workflows/test_clue.yml@main
     with:
-      # Pinned to the dev toolchain: Nim 2.4.x (current stable) miscompiles
-      # the openparser regex JIT for anchored patterns (e.g. `^\d+$` ->
-      # SIGSEGV in jitExec, both openparser 0.4.1/0.4.2, x86_64 only).
-      # Unpin once upstream is fixed.
-      nim-version: 2.2.12
       os: '[{"os":"macos-15"},{"os":"macos-15-intel"},{"os":"ubuntu-24.04"}]'
       pre-install-command: 'if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update && sudo apt-get install -y libjavascriptcoregtk-4.1-dev libssl-dev; fi'
       pre-test-command: 'git config --global user.email "carne-ci@openpeeps.dev" && git config --global user.name "carne-ci"'
