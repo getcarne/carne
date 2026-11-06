@@ -160,7 +160,7 @@ processing, crypto, networking, and developer tools:
 - `std/vcard` - vCard contact parsing (parse-only in v1)
 - `std/feed` - RSS and Atom feed parsing (parse-only in v1)
 - `std/sql` - SQL parsing and validation (sqlite, postgres, mysql)
-- `std/crypto` - hashing, AEAD sealing, signatures, passwords
+- `std/crypto` - hashing, AEAD/XChaCha20-Poly1305 + AES-GCM sealing, ed25519/X25519, ECDSA/ECDH, RSA, passwords
 - `std/path` - file-path and URL parsing (parse-only in v1)
 - `std/colors` - color parsing, formatting and math (fetched via `carne std init`)
 - `std/css` - CSS parsing and declaration validation
@@ -193,7 +193,7 @@ Full API reference with examples: https://openpeeps.github.io/carne/
 - [x] Lazy startup (deferred event loop, per-run TLS, cached spec data)
 - [x] Benchmark suite + results
 - [ ] Top-level await in scripts (currently needs an async IIFE)
-- [ ] `std/crypto`: X25519 exchange, RSA/ECDSA, AES-GCM
+- [x] `std/crypto`: X25519 exchange, RSA/ECDSA, AES-GCM
 - [ ] `std/gettext`: `.mo` support; `std/qr`: decode; `std/svg`: stringify
 - [ ] `exportClass` in the module DSL
 - [x] Public package registry ([openpeeps/carnepkgs](https://github.com/openpeeps/carnepkgs))
