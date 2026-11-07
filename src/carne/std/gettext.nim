@@ -17,6 +17,7 @@ import std/[os, strutils, tables]
 import javascriptcore
 
 import pkg/openparser/gettext/po
+import pkg/openparser/gettext/mo
 
 import ../bridge
 
@@ -87,6 +88,48 @@ proc entryToJS(ctx: JSContextRef; cat: PoCatalog; e: PoEntry;
     if not setPropChecked(ctx, obj, "fuzzy", toJS(ctx, true), fname,
         exception):
       return nil
+  obj
+
+proc openMo(path, name: string; ctx: JSContextRef;
+    exception: ptr JSValueRef; cat: var MoCatalog;
+    docBlock = ""): bool =
+  ## Opens a .mo catalog from a file path. False + JS throw on failure.
+  ## Callers must close(cat) when done.
+  try:
+    cat = openMoCatalog(path)
+    true
+  except CatchableError as e:
+    throwError(ctx,
+      (if docBlock.len > 0: docBlock & "\n" else: "") & name & ": " &
+      e.msg, exception)
+    false
+
+proc moEntryToJS(ctx: JSContextRef; cat: MoCatalog; m: MoMessage;
+    fname: string; exception: ptr JSValueRef): JSValueRef =
+  let obj = newObject(ctx)
+  if not setPropChecked(ctx, obj, "msgid",
+      toJS(ctx, toString(cat, m.msgid)), fname, exception):
+    return nil
+  let plural = toString(cat, m.msgidPlural)
+  if plural.len > 0:
+    if not setPropChecked(ctx, obj, "msgidPlural", toJS(ctx, plural),
+        fname, exception):
+      return nil
+  let context = toString(cat, m.msgctxt)
+  if context.len > 0:
+    if not setPropChecked(ctx, obj, "msgctxt", toJS(ctx, context),
+        fname, exception):
+      return nil
+  var fvals: seq[JSValueRef] = @[]
+  for s in m.forms:
+    fvals.add(toJS(ctx, toString(cat, s)))
+  let forms = makeJSArray(ctx, fvals)
+  if forms == nil:
+    throwError(ctx, fname & ": could not convert result to JS",
+      exception)
+    return nil
+  if not setPropChecked(ctx, obj, "msgstr", forms, fname, exception):
+    return nil
   obj
 
 ## Builds the std/gettext namespace object.
@@ -172,4 +215,80 @@ init proc(module: Module) =
       except CatchableError as e:
         closeTemp(tmp, cat)
         throwError(ctx, "ntranslate: " & e.msg, exception)
+        nil
+
+    module.registerFn parseMoFile(path: string):
+      ## gettext.parseMoFile(path) -> {headers, entries}
+      var cat: MoCatalog
+      if not openMo(path, "parseMoFile", ctx, exception, cat, docBlock):
+        return nil
+      try:
+        let headers = newObject(ctx)
+        var hex: JSValueRef = nil
+        for k, v in cat.headers.pairs:
+          setProp(ctx, headers, k, toJS(ctx, v), addr hex)
+          if hex != nil:
+            close(cat)
+            throwError(ctx, "parseMoFile: could not convert result to JS",
+              exception)
+            return nil
+        var evals: seq[JSValueRef] = @[]
+        for m in cat.messages:
+          if toString(cat, m.msgid).len == 0:
+            continue
+          let j = moEntryToJS(ctx, cat, m, "parseMoFile", exception)
+          if j == nil:
+            close(cat)
+            return nil
+          evals.add(j)
+        let entries = makeJSArray(ctx, evals)
+        if entries == nil:
+          close(cat)
+          throwError(ctx, "parseMoFile: could not convert result to JS",
+            exception)
+          return nil
+        let obj = newObject(ctx)
+        if not setPropChecked(ctx, obj, "headers", headers, "parseMoFile",
+            exception):
+          close(cat)
+          return nil
+        if not setPropChecked(ctx, obj, "entries", entries, "parseMoFile",
+            exception):
+          close(cat)
+          return nil
+        close(cat)
+        obj
+      except CatchableError as e:
+        close(cat)
+        throwError(ctx, "parseMoFile: " & e.msg, exception)
+        nil
+
+    module.registerFn translateMo(path: string, msgid: string,
+        msgctxt ?: string):
+      ## gettext.translateMo(path, msgid[, msgctxt]) -> string
+      var cat: MoCatalog
+      if not openMo(path, "translateMo", ctx, exception, cat, docBlock):
+        return nil
+      try:
+        let s = translate(compileMo(cat), msgid, msgctxt)
+        close(cat)
+        toJS(ctx, s)
+      except CatchableError as e:
+        close(cat)
+        throwError(ctx, "translateMo: " & e.msg, exception)
+        nil
+
+    module.registerFn ntranslateMo(path: string, singular: string,
+        plural: string, n: int64):
+      ## gettext.ntranslateMo(path, singular, plural, n) -> string
+      var cat: MoCatalog
+      if not openMo(path, "ntranslateMo", ctx, exception, cat, docBlock):
+        return nil
+      try:
+        let s = ntranslate(compileMo(cat), singular, plural, int(n))
+        close(cat)
+        toJS(ctx, s)
+      except CatchableError as e:
+        close(cat)
+        throwError(ctx, "ntranslateMo: " & e.msg, exception)
         nil

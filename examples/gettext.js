@@ -25,3 +25,8 @@ console.log(gettext.translate(po, "Hello"));
 console.log(gettext.translate(po, "Untranslated string"));
 for (const n of [1, 3])
   console.log(n + " " + gettext.ntranslate(po, "apple", "apples", n));
+
+// Binary catalogs load from a file path instead of a string.
+const mo = "tests/fixtures/gettext.mo";
+console.log("mo: " + gettext.translateMo(mo, "Hello"));
+console.log("mo plural: " + gettext.ntranslateMo(mo, "apple", "apples", 3));

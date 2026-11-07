@@ -156,6 +156,7 @@ processing, crypto, networking, and developer tools:
 - `std/bson` - BSON parsing and serialization
 - `std/csv` - CSV parsing
 - `std/xml` - XML parsing and serialization
+- `std/html` - HTML parsing (parse-only in v1)
 - `std/vcard` - vCard contact parsing (parse-only in v1)
 - `std/feed` - RSS and Atom feed parsing (parse-only in v1)
 - `std/sql` - SQL parsing and validation (sqlite, postgres, mysql)
@@ -164,14 +165,16 @@ processing, crypto, networking, and developer tools:
 - `std/colors` - color parsing, formatting and math (fetched via `carne std init`)
 - `std/css` - CSS parsing and declaration validation
 - `std/diff` - unified diffs
-- `std/gettext` - `.po` parsing and translation
+- `std/gettext` - `.po` parsing and translation, `.mo` file catalogs
 - `std/str` - string utilities and validators (fetched via `carne std init`)
 - `std/mimetype` - MIME type lookup
 - `std/benchmark` - in-process microbenchmarking
 - `std/qr` - QR code generation (decoding out of scope in v1)
-- `std/svg` - SVG parsing (serialization out of scope in v1)
+- `std/svg` - SVG parsing and serialization
 - `std/http` - async HTTP client + server (optional worker threads)
 - `std/ws` - async + sync WebSocket client and server
+- `std/tcp` - async TCP client + server, optional TLS
+- `std/udp` - async UDP sockets (bind/connect, rinfo echo)
 - `std/uuid` - UUID generation (v1-v8) and inspection
 - `std/test` - minimal test runner (test/describe/expect/assert, fetched via `carne std init`)
 - `std/db` - async + sync database driver and ORM (sqlite, postgres, fetched via `carne std init`)
@@ -193,7 +196,7 @@ Full API reference with examples: https://openpeeps.github.io/carne/
 - [x] Benchmark suite + results
 - [ ] Top-level await in scripts (currently needs an async IIFE)
 - [x] `std/crypto`: X25519 exchange, RSA/ECDSA, AES-GCM
-- [ ] `std/gettext`: `.mo` support; `std/qr`: decode; `std/svg`: stringify
+- [x] `std/gettext` `.mo` file catalogs, `std/svg` stringify (`std/qr` decode deferred)
 - [ ] `exportClass` in the module DSL
 - [x] Public package registry ([openpeeps/carnepkgs](https://github.com/openpeeps/carnepkgs))
 - [x] `carne pkg publish` (fork + PR flow, `.tokens` auth)

@@ -17,6 +17,7 @@ import ./vcard
 import ./feed
 import ./csv
 import ./xml
+import ./html
 import ./sql
 import ./crypto
 import ./path
@@ -29,6 +30,8 @@ import ./qr
 import ./svg
 import ./http
 import ./ws
+import ./tcp
+import ./udp
 import ./uuid
 import ./db
 
@@ -43,6 +46,7 @@ registerStd("std/vcard", vcard.install)
 registerStd("std/feed", feed.install)
 registerStd("std/csv", csv.install)
 registerStd("std/xml", xml.install)
+registerStd("std/html", html.install)
 registerStd("std/sql", sql.install)
 registerStd("std/crypto", crypto.install)
 registerStd("std/path", path.install)
@@ -55,5 +59,7 @@ registerStd("std/qr", qr.install)
 registerStd("std/svg", svg.install)
 registerStd("std/http", http.install)
 registerStd("std/ws", ws.install)
+registerStd("std/tcp", tcp.install)
+registerStd("std/udp", udp.install)
 registerStd("std/uuid", uuid.install)
 registerStd("std/db/driver", db.installDriver)

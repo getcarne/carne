@@ -6,5 +6,9 @@ testresults/
 /tests/*
 !/tests/*.nim
 !/tests/*.nims
+!/tests/fixtures/
+!/tests/fixtures/*.mo
+!/tests/fixtures/*.po
+!/tests/fixtures/*.pem
 clue.lock
 bin/

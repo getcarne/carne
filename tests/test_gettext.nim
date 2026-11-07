@@ -44,3 +44,40 @@ test "gettext ntranslate picks plural form":
 test "gettext parse error throws":
   expect CarneError:
     discard runCode("require('std/gettext').parse('msgid \"unterminated')")
+
+const moPath = "tests/fixtures/gettext.mo"
+
+test "gettext mo file parse headers and entries":
+  check runCode(
+    "JSON.stringify(require('std/gettext').parseMoFile('" & moPath &
+    "').headers)") ==
+    """{"Project-Id-Version":"demo","Language":"fr","Plural-Forms":"nplurals=2; plural=(n > 1);"}"""
+  check runCode(
+    "JSON.stringify(require('std/gettext').parseMoFile('" & moPath &
+    "').entries)") ==
+    """[{"msgid":"Hello","msgstr":["Bonjour"]},""" &
+    """{"msgid":"apple","msgidPlural":"apples",""" &
+    """"msgstr":["pomme","pommes"]},""" &
+    """{"msgid":"Open","msgctxt":"menu","msgstr":["Ouvrir"]}]"""
+
+test "gettext mo translate and ntranslate":
+  check runCode(
+    "require('std/gettext').translateMo('" & moPath & "', 'Hello')") ==
+    "Bonjour"
+  check runCode(
+    "require('std/gettext').translateMo('" & moPath &
+    "', 'Open', 'menu')") == "Ouvrir"
+  check runCode(
+    "require('std/gettext').translateMo('" & moPath &
+    "', 'Missing')") == "Missing"
+  check runCode(
+    "require('std/gettext').ntranslateMo('" & moPath &
+    "', 'apple', 'apples', 1)") == "pomme"
+  check runCode(
+    "require('std/gettext').ntranslateMo('" & moPath &
+    "', 'apple', 'apples', 5)") == "pommes"
+
+test "gettext mo missing file throws":
+  expect CarneError:
+    discard runCode(
+      "require('std/gettext').parseMoFile('tests/fixtures/nope.mo')")

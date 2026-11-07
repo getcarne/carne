@@ -23,3 +23,19 @@ test "svg parse text leaves":
 test "svg parse error throws":
   expect CarneError:
     discard runCode("require('std/svg').parse('<svg><unclosed>')")
+
+test "svg stringify roundtrip":
+  check runCode(
+    "const s = require('std/svg');" &
+    "s.stringify(s.parse(" &
+    "'<svg viewBox=\"0 0 10 10\"><circle cx=\"5\" cy=\"5\" r=\"4\"/></svg>'))") ==
+    """<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4"/></svg>"""
+  check runCode(
+    "const s = require('std/svg');" &
+    "s.stringify(s.parse('<svg>hi</svg>'))") == "<svg>hi</svg>"
+
+test "svg stringify validates shapes":
+  expect CarneError:
+    discard runCode("require('std/svg').stringify({tag: 42})")
+  expect CarneError:
+    discard runCode("require('std/svg').stringify('just a string root')")

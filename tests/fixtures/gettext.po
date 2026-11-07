@@ -1,0 +1,17 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: demo\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Hello"
+msgstr "Bonjour"
+
+msgctxt "menu"
+msgid "Open"
+msgstr "Ouvrir"
+
+msgid "apple"
+msgid_plural "apples"
+msgstr[0] "pomme"
+msgstr[1] "pommes"

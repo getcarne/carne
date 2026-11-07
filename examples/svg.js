@@ -13,3 +13,4 @@ for (const el of doc.children.filter(c => c.kind === "element"))
   console.log("child: " + el.tag + " " + JSON.stringify(el.attrs));
 const text = doc.children.find(c => c.tag === "text");
 console.log("caption: " + text.children[0].text);
+console.log("remake: " + svg.stringify(doc).slice(0, 60) + "...");
