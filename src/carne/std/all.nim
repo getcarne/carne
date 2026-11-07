@@ -33,6 +33,9 @@ import ./ws
 import ./tcp
 import ./udp
 import ./uuid
+import ./nanoid
+import ./url
+import ./watcher
 import ./db
 
 registerStd("std/env", env.install)
@@ -62,4 +65,7 @@ registerStd("std/ws", ws.install)
 registerStd("std/tcp", tcp.install)
 registerStd("std/udp", udp.install)
 registerStd("std/uuid", uuid.install)
+registerStd("std/nanoid", nanoid.install)
+registerStd("std/url", url.install)
+registerStd("std/watcher", watcher.install)
 registerStd("std/db/driver", db.installDriver)
