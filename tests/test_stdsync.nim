@@ -1,4 +1,5 @@
 import std/os
+import std/algorithm
 import std/strutils
 import std/tables
 import unittest
@@ -7,6 +8,7 @@ import pkg/nimcypher/hash
 
 import carne
 import carne/modules
+import carne/std/env
 import carne/pkg/stdsync
 
 proc fakeRepo(): tuple[base, home: string] =
@@ -132,3 +134,13 @@ test "dispatcher loads store files and hints on misses":
     unknown = true
     check "unknown module" in e.msg
   check unknown
+
+test "registeredStdNames lists built-in modules sorted":
+  registerStd("std/zz-test", env.install)
+  registerStd("std/aa-test", env.install)
+  let names = registeredStdNames()
+  check "std/zz-test" in names
+  check "std/aa-test" in names
+  var sortedNames = names
+  sortedNames.sort()
+  check names == sortedNames

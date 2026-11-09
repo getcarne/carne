@@ -4,7 +4,31 @@
 
 import std/[os, strutils, algorithm, atomics, terminal]
 
-const versionStr* = "0.1.0"
+func nimbleVersionStr*(spec: string): string =
+  ## First `version = "..."` assignment in a .nimble file (comments
+  ## skipped, `version` matched as a whole word). "" when absent.
+  for raw in spec.splitLines():
+    var s = raw.strip()
+    if s.len == 0 or s[0] == '#':
+      continue
+    if not s.startsWith("version"):
+      continue
+    s = s["version".len .. ^1].strip()
+    if not s.startsWith("="):
+      continue
+    s = s[1 .. ^1].strip()
+    if s.len >= 2 and s[0] == '"':
+      let q = s.find('"', 1)
+      if q > 1:
+        return s[1 ..< q]
+  ""
+
+const versionStr* = nimbleVersionStr(staticRead("../../carne.nimble"))
+  ## Binary version, always from carne.nimble (compile-time, so the
+  ## CLI, help text and std tag resolution can never drift).
+
+static:
+  assert versionStr.len > 0, "carne.nimble has no parseable `version`"
 
 const
   ansiReset = "\e[0m"
@@ -253,6 +277,9 @@ proc printHelp*() =
   echo ""
   echo label("Versioning")
   echo "  bump [semver] [--level=..] [--dep=..] " & grey("bump version in package.json (or a direct dep)")
+  echo ""
+  echo label("Inspect")
+  echo "  dump [pkg[@ref]]        " & grey("print package.json (cwd or an installed package)")
   echo ""
   echo "  -h, --help              " & grey("show this help")
   echo "  --version               " & grey("show version")

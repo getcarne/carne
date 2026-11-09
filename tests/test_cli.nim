@@ -1,6 +1,15 @@
+import std/os
 import unittest
 
 import carne/cli
+
+test "build version matches carne.nimble":
+  ## versionStr is parsed from carne.nimble at compile time; this
+  ## re-parses the working-tree file so format drift fails loudly.
+  if not fileExists("carne.nimble"):
+    skip()
+  check versionStr == nimbleVersionStr(readFile("carne.nimble"))
+  check versionStr.len > 0
 
 test "confirm declines without a tty":
   ## Test runners pipe stdin, so this deterministically takes the

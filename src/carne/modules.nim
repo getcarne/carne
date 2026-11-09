@@ -12,6 +12,7 @@
 
 import std/tables
 import std/strutils
+import std/algorithm
 
 import javascriptcore
 
@@ -48,6 +49,13 @@ proc registerStd*(name: string; installer: Installer) =
   ## Registers one stdlib implementation. Called once per module from
   ## std/all.nim (binary) or from individual tests.
   installers[name] = installer
+
+proc registeredStdNames*(): seq[string] =
+  ## Sorted names of every registered (built-in, Nim) std module.
+  ## Read-only after startup registration, so workers may call it.
+  for k in installers.keys:
+    result.add(k)
+  result.sort()
 
 proc requireImpl(ctx: JSContextRef; function, thisObject: JSObjectRef;
     argumentCount: csize_t; arguments: ptr JSValueRef;
