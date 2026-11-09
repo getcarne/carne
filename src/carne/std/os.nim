@@ -4,6 +4,7 @@
 #   os.readFile(path)         -> string (throws on IOError)
 #   os.readFileBytes(path)    -> Uint8Array (mmap zero-copy, throws on IOError)
 #   os.writeFile(path, data)  -> undefined
+#   os.writeFileBytes(path, data) -> undefined (data: string | Uint8Array)
 #   os.appendFile(path, data) -> undefined
 #   os.exists(path)           -> bool (files and dirs)
 #   os.isFile(path)           -> bool
@@ -190,6 +191,22 @@ init proc(module: Module) =
         return nil
       except OSError as e:
         throwError(ctx, "appendFile: " & e.msg, exception)
+        return nil
+      JSValueMakeUndefined(ctx)
+
+    module.registerFn writeFileBytes(path: string, data: JSValueRef):
+      ## os.writeFileBytes(path, data) -> undefined (data: string | Uint8Array)
+      var bytes: string
+      if not readBytesParam(ctx, data, "writeFileBytes", "data", docBlock,
+          exception, bytes):
+        return nil
+      try:
+        writeFile(path, bytes)
+      except IOError as e:
+        throwError(ctx, "writeFileBytes: " & e.msg, exception)
+        return nil
+      except OSError as e:
+        throwError(ctx, "writeFileBytes: " & e.msg, exception)
         return nil
       JSValueMakeUndefined(ctx)
 

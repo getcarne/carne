@@ -1038,6 +1038,87 @@ proc fromJsonNode*(n: JsonNode): NimValue =
     for k, item in n.pairs:
       result.obj[k] = fromJsonNode(item)
 
+proc readBytesParam*(ctx: JSContextRef; v: JSValueRef; fname, pname,
+    docBlock: string; exception: ptr JSValueRef;
+    dst: var string): bool =
+  ## Reads a live value as bytes: JS strings contribute their UTF-8
+  ## bytes, Uint8Array/Uint8ClampedArray views and ArrayBuffers are
+  ## copied out immediately (the JSC pointer is temporary and may not
+  ## survive further JS calls). Anything else throws the JSDoc-first
+  ## type mismatch, like the macro's checked params. Snapshots
+  ## (NimValue) are deliberately avoided here: a Uint8Array would walk
+  ## per byte. False + JS throw on failure.
+  if v == nil:
+    throwTypeMismatch(ctx, fname, pname, "null", "string or Uint8Array",
+      docBlock, exception)
+    return false
+  case JSValueGetType(ctx, v)
+  of kJSTypeString:
+    var ex: JSValueRef = nil
+    let s = JSValueToStringCopy(ctx, v, addr ex)
+    if ex != nil or s == nil:
+      throwError(ctx, fname & ": `" & pname &
+        "` is not convertible to string", exception)
+      return false
+    defer: JSStringRelease(s)
+    dst = $s
+    true
+  of kJSTypeObject:
+    if JSObjectIsFunction(ctx, v):
+      throwTypeMismatch(ctx, fname, pname, "function",
+        "string or Uint8Array", docBlock, exception)
+      return false
+    let o = cast[JSObjectRef](v)
+    var tex: JSValueRef = nil
+    let t = JSValueGetTypedArrayType(ctx, v, addr tex)
+    if tex != nil:
+      throwError(ctx, fname & ": `" & pname & "` is unreadable",
+        exception)
+      return false
+    var n = 0
+    var p: pointer = nil
+    case t
+    of kJSTypedArrayTypeUint8Array, kJSTypedArrayTypeUint8ClampedArray:
+      var lex: JSValueRef = nil
+      n = int(JSObjectGetTypedArrayByteLength(ctx, o, addr lex))
+      if lex != nil or n < 0:
+        throwError(ctx, fname & ": `" & pname & "` is unreadable",
+          exception)
+        return false
+      if n > 0:
+        var pex: JSValueRef = nil
+        p = JSObjectGetTypedArrayBytesPtr(ctx, o, addr pex)
+        if pex != nil or p == nil:
+          throwError(ctx, fname & ": `" & pname & "` is detached",
+            exception)
+          return false
+    of kJSTypedArrayTypeArrayBuffer:
+      var lex: JSValueRef = nil
+      n = int(JSObjectGetArrayBufferByteLength(ctx, o, addr lex))
+      if lex != nil or n < 0:
+        throwError(ctx, fname & ": `" & pname & "` is unreadable",
+          exception)
+        return false
+      if n > 0:
+        var pex: JSValueRef = nil
+        p = JSObjectGetArrayBufferBytesPtr(ctx, o, addr pex)
+        if pex != nil or p == nil:
+          throwError(ctx, fname & ": `" & pname & "` is detached",
+            exception)
+          return false
+    else:
+      throwTypeMismatch(ctx, fname, pname, jsKindName(ctx, v),
+        "string or Uint8Array", docBlock, exception)
+      return false
+    dst = newString(n)
+    if n > 0:
+      copyMem(addr dst[0], p, n)
+    true
+  else:
+    throwTypeMismatch(ctx, fname, pname, jsKindName(ctx, v),
+      "string or Uint8Array", docBlock, exception)
+    false
+
 proc strArg*(ctx: JSContextRef; args: ptr UncheckedArray[JSValueRef];
     i: int; name: string; exception: ptr JSValueRef;
     val: var string): bool =

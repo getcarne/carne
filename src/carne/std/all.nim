@@ -8,6 +8,7 @@ import ../modules
 
 import ./env
 import ./os
+import ./archive
 import ./yaml
 import ./toml
 import ./ical
@@ -40,6 +41,7 @@ import ./db
 
 registerStd("std/env", env.install)
 registerStd("std/os", os.install)
+registerStd("std/archive", archive.install)
 registerStd("std/yaml", yaml.install)
 registerStd("std/toml", toml.install)
 registerStd("std/ical", ical.install)

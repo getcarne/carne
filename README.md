@@ -38,6 +38,7 @@ script that just runs, take Carne.
 - Cryptographic library via [pkg/nimcypher](https://github.com/nimbase/nimcypher)
 - HTTP/1.1, H/2, UDP, TCP and WebSockets library via [pkg/powpow](https://github.com/openpeeps/powpow)
 - Built-in formatters: `yaml`, `toml`, `csv`, `xml`, `markdown`, `vcard`, `feed`, `sql`, `css`, `diff`, `qr`, `svg` via [pkg/openparser](https://github.com/openpeeps/openparser) (`colors` is pure JS)
+- Built-in archives and compression: `tar`, `zip`, `rar`, `gz`, `lz4`, `bz2`, `brotli` via [pkg/archive](https://github.com/nimbase/archive)
 - i18n via GNU Gettext PO/MO
 - CSS and JavaScript bundler via [pkg/squeezy](https://github.com/openpeeps/squeezy)
 - Built-in package manager (`carne pkg`)
@@ -148,6 +149,7 @@ processing, crypto, networking, and developer tools:
 
 - `std/env` - process info and environment (args, getEnv, putEnv, delEnv, hasEnv, parse/load `.env`, cwd, exit)
 - `std/os` - synchronous OS utilities (files, dirs, sleep, exec)
+- `std/archive` - archive creation/extraction and compression (tar, zip, rar, gz, lz4, bz2, brotli)
 - Timers - `setTimeout`/`setInterval` globals, no require needed
 - `std/yaml` - YAML parsing and serialization
 - `std/toml` - TOML parsing and serialization
@@ -195,6 +197,7 @@ Full API reference with examples: https://openpeeps.github.io/carne/
 - [x] `std/http` workers (cluster-style threads, `process.isWorker`)
 - [x] `std/uuid` (v1-v8 generation, parse/inspect, RFC namespace constants)
 - [x] `std/db` (async + sync driver, fluent builder, models, migrations; sqlite + postgres)
+- [x] `std/archive` (tar/zip/rar creation + extraction, gz/lz4/bz2/brotli; in-memory and file APIs)
 - [x] Lazy startup (deferred event loop, per-run TLS, cached spec data)
 - [x] Benchmark suite + results
 - [ ] Top-level await in scripts (currently needs an async IIFE)

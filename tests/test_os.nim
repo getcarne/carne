@@ -27,6 +27,27 @@ test "os write/read roundtrip":
   discard runCode("require('std/os').writeFile('" & p & "', 'abc123')")
   check runCode("require('std/os').readFile('" & p & "')") == "abc123"
 
+test "os writeFileBytes roundtrips binary":
+  let p = tmpPath("wbytes.bin")
+  defer: removeFile(p)
+  check runCode(
+    "const os = require('std/os'); " &
+    "const src = new Uint8Array(256); " &
+    "for (let i = 0; i < 256; i++) src[i] = i; " &
+    "os.writeFileBytes('" & p & "', src); " &
+    "const back = os.readFileBytes('" & p & "'); " &
+    "back.length + ',' + back[0] + ',' + back[128] + ',' + back[255]") ==
+    "256,0,128,255"
+  check runCode(
+    "const os = require('std/os'); " &
+    "os.writeFileBytes('" & p & "', 'hi'); " &
+    "os.readFile('" & p & "')") == "hi"
+  expect CarneError:
+    discard runCode(
+      "require('std/os').writeFileBytes('/no/such_dir_xyz/f.bin', 'x')")
+  expect CarneError:
+    discard runCode("require('std/os').writeFileBytes('x', 42)")
+
 test "os appendFile appends":
   let p = tmpPath("append.txt")
   defer: removeFile(p)
