@@ -1119,6 +1119,61 @@ proc readBytesParam*(ctx: JSContextRef; v: JSValueRef; fname, pname,
       "string or Uint8Array", docBlock, exception)
     false
 
+proc sanitizeUTF8*(s: string): string =
+  ## Copies s, replacing malformed UTF-8 with U+FFFD (WHATWG-style).
+  ## JSC string creation fails on invalid input (nil JSString), which
+  ## turns into dropped values or rejected fetches downstream — never
+  ## pass wire bytes to newJSString unsanitized. Overlongs, surrogates
+  ## and codepoints past U+10FFFF count as malformed, like WebKit.
+  result = newStringOfCap(s.len)
+  var i = 0
+  template bad() =
+    result.add("\xEF\xBF\xBD")
+    inc i
+  while i < s.len:
+    let b = s[i].uint8
+    if b < 0x80'u8:
+      result.add(s[i])
+      inc i
+    else:
+      var need = 0
+      var lo, hi: uint8
+      if b in 0xC2'u8 .. 0xDF'u8:
+        need = 1
+        lo = 0x80'u8; hi = 0xBF'u8
+      elif b in 0xE0'u8 .. 0xEF'u8:
+        need = 2
+        lo = 0x80'u8; hi = 0xBF'u8
+        if b == 0xE0'u8: lo = 0xA0'u8
+        elif b == 0xED'u8: hi = 0x9F'u8
+      elif b in 0xF0'u8 .. 0xF4'u8:
+        need = 3
+        lo = 0x80'u8; hi = 0xBF'u8
+        if b == 0xF0'u8: lo = 0x90'u8
+        elif b == 0xF4'u8: hi = 0x8F'u8
+      else:
+        bad()
+        continue
+      if i + need >= s.len:
+        bad()
+        continue
+      var ok = true
+      for k in 1 .. need:
+        let c = s[i + k].uint8
+        if k == 1:
+          if c < lo or c > hi:
+            ok = false
+            break
+        elif c < 0x80'u8 or c > 0xBF'u8:
+          ok = false
+          break
+      if not ok:
+        bad()
+        continue
+      for k in 0 .. need:
+        result.add(s[i + k])
+      i += need + 1
+
 proc strArg*(ctx: JSContextRef; args: ptr UncheckedArray[JSValueRef];
     i: int; name: string; exception: ptr JSValueRef;
     val: var string): bool =

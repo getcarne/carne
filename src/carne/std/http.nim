@@ -13,6 +13,8 @@
 # loop together with timers and serve sockets: truly async, no threads.
 # serve borrows the loop and holds it alive until close (Node semantics).
 # Handler return: string -> 200 text/plain; {status?, headers?, body?};
+# body is a string, a Uint8Array (binary, Content-Type defaults to
+# application/octet-stream), or anything else (JSON-serialized);
 # undefined/null -> 200 empty; anything else -> JSON body. The object
 # form defaults Content-Type to text/plain for string bodies and
 # application/json for serialized ones unless headers sets one. A JS
@@ -201,7 +203,11 @@ proc responseToJson(res: HttpClientResponse): JsonNode =
   for k, v in res.getHeaders().pairs:
     hdrs[k] = %v
   result["headers"] = hdrs
-  result["body"] = %res.getBodyString()
+  # Bodies arrive as raw wire bytes; decode lossy (U+FFFD) so any
+  # payload converts to JS instead of rejecting the fetch. NUL
+  # survives; for exact binary, serve with Content-Length and read
+  # length + codes, or fetch outside the runtime.
+  result["body"] = %sanitizeUTF8(res.getBodyString())
 
 # Lazy request objects: the handler gets a JSClass instance whose fields
 # convert on first access instead of an eagerly snapshotted object, so a
@@ -450,6 +456,85 @@ proc startFetch(ctx: JSContextRef; rt: Runtime; url: string; opts: FetchOpts;
     return nil
   promise
 
+proc liveProp(ctx: JSContextRef; obj: JSValueRef; key: string): JSValueRef =
+  ## One live property read; nil when the getter throws. Used where a
+  ## snapshot is wrong: typed-array bodies must never be walked.
+  let k = newJSString(key)
+  defer: JSStringRelease(k)
+  var ex: JSValueRef = nil
+  result = JSObjectGetProperty(ctx, cast[JSObjectRef](obj), k, addr ex)
+  if ex != nil:
+    result = nil
+
+proc isByteView(ctx: JSContextRef; v: JSValueRef): bool =
+  ## True for Uint8Array/Uint8ClampedArray views and ArrayBuffers.
+  if v == nil or JSValueGetType(ctx, v) != kJSTypeObject:
+    return false
+  var tex: JSValueRef = nil
+  let t = JSValueGetTypedArrayType(ctx, v, addr tex)
+  tex == nil and t in {kJSTypedArrayTypeUint8Array,
+    kJSTypedArrayTypeUint8ClampedArray, kJSTypedArrayTypeArrayBuffer}
+
+proc serveBinary(ctx: JSContextRef; res: HttpResponse; ret, bodyProp: JSValueRef;
+    headOnly: bool) =
+  ## Serves a {status?, headers?, body: Uint8Array} handler return.
+  ## Unreadable parts answer 500; HEAD and null-body statuses send no
+  ## bytes (fetch semantics, like the text path). Unset Content-Type
+  ## defaults to application/octet-stream for non-empty bodies.
+  var code = Http200
+  var err = ""
+  let s = getField(ctx, ret, "status", err)
+  if err != "":
+    res.sendError(Http500, "handler status is unreadable")
+    return
+  case s.kind
+  of nvkUndefined: discard
+  of nvkInt:
+    if s.i < 100 or s.i > 599:
+      res.sendError(Http500, "handler status must be 100..599")
+      return
+    code = HttpCode(int(s.i))
+  else:
+    res.sendError(Http500, "handler status must be 100..599")
+    return
+  var hdrs: seq[(string, string)] = @[]
+  let h = getField(ctx, ret, "headers", err)
+  if err != "":
+    res.sendError(Http500, "handler headers are unreadable")
+    return
+  case h.kind
+  of nvkUndefined: discard
+  of nvkObject:
+    for k, v in h.obj.pairs:
+      if v.kind != nvkString:
+        res.sendError(Http500, "handler header values must be strings")
+        return
+      hdrs.add((k, v.s))
+  else:
+    res.sendError(Http500, "handler headers must be an object")
+    return
+  var raw = ""
+  var exc: JSValueRef = nil
+  if not readBytesParam(ctx, bodyProp, "serve", "body", "", addr exc, raw):
+    res.sendError(Http500, "handler body is unreadable")
+    return
+  if headOnly or code in {Http101, Http204, Http205, Http304}:
+    raw = ""
+  var hasContentType = false
+  for (k, v) in hdrs:
+    if k.toLowerAscii() == "content-type":
+      hasContentType = true
+      break
+  if not hasContentType and raw.len > 0:
+    hdrs.add(("Content-Type", "application/octet-stream"))
+  res.status(code)
+  for (k, v) in hdrs:
+    res.header(k, v)
+  var bytes = newSeq[byte](raw.len)
+  if raw.len > 0:
+    copyMem(addr bytes[0], unsafeAddr raw[0], raw.len)
+  res.send(bytes)
+
 proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
   ## powpow dispatch: runs on the loop thread, which is the JS thread
   ## (borrowed loop), so JS calls are sound; the cast covers the global
@@ -498,6 +583,16 @@ proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
         .header("Content-Type", "text/plain; charset=utf-8")
         .send(if headOnly: "" else: valueToString(c, ret))
       return
+    # Binary fast path: {status?, headers?, body: Uint8Array}. jsToJson
+    # would walk a typed array per byte (tripping the snapshot cap on
+    # large files), so probe the live body ref first; anything else
+    # falls through to the snapshot path with identical behavior.
+    if JSValueGetType(c, ret) == kJSTypeObject and
+        not JSValueIsArray(c, ret) and not JSObjectIsFunction(c, ret):
+      let bodyProp = liveProp(c, ret, "body")
+      if isByteView(c, bodyProp):
+        serveBinary(c, res, ret, bodyProp, headOnly)
+        return
     var jerr = ""
     let node = jsToJson(c, ret, jerr)
     if node == nil:

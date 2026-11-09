@@ -198,3 +198,52 @@ test "object return defaults content-type":
     "'|' + e.headers['content-type'] + '|' + " &
     "String(n.headers['content-type']); })()") ==
     "text/plain; charset=utf-8|application/json|text/csv|undefined"
+
+test "handler Uint8Array body roundtrips bytes":
+  check runCode(preamble &
+    "const srv = http.serve(18120, req => " &
+    "({headers: {'Content-Type': 'application/octet-stream'}, " &
+    "body: new Uint8Array([72, 105, 195, 169])})); " &
+    "const res = await http.get('http://127.0.0.1:18120/'); " &
+    "http.close(srv.port); " &
+    "return res.status + ':' + res.headers['content-type'] + ':' + " &
+    "res.headers['content-length'] + ':' + res.body; })()") ==
+    "200:application/octet-stream:4:Hi\u00e9"
+
+test "handler Uint8Array body defaults status and content type":
+  check runCode(preamble &
+    "const srv = http.serve(18121, req => " &
+    "({status: 201, body: new Uint8Array([65, 66, 67])})); " &
+    "const res = await http.get('http://127.0.0.1:18121/'); " &
+    "http.close(srv.port); " &
+    "return res.status + ':' + res.headers['content-type'] + ':' + " &
+    "res.body; })()") ==
+    "201:application/octet-stream:ABC"
+
+test "handler Uint8Array body with NUL keeps content length":
+  check runCode(preamble &
+    "const srv = http.serve(18122, req => " &
+    "({body: new Uint8Array([65, 0, 66])})); " &
+    "const res = await http.get('http://127.0.0.1:18122/'); " &
+    "http.close(srv.port); " &
+    "return res.headers['content-length'] + ':' + res.body.length + " &
+    "':' + res.body.charCodeAt(1); })()") == "3:3:0"
+
+test "handler Uint8Array body rejects bad status and headers":
+  check runCode(preamble &
+    "const srv = http.serve(18123, req => " &
+    "req.path === '/s' ? {status: 99, body: new Uint8Array([1])} : " &
+    "{headers: {x: 42}, body: new Uint8Array([1])}); " &
+    "const a = await http.get('http://127.0.0.1:18123/s'); " &
+    "const b = await http.get('http://127.0.0.1:18123/h'); " &
+    "http.close(srv.port); " &
+    "return a.status + ':' + b.status; })()") == "500:500"
+
+test "client decodes invalid UTF-8 with replacement":
+  check runCode(preamble &
+    "const srv = http.serve(18124, req => " &
+    "({body: new Uint8Array([65, 255, 66])})); " &
+    "const res = await http.get('http://127.0.0.1:18124/'); " &
+    "http.close(srv.port); " &
+    "return res.headers['content-length'] + ':' + res.body.length + " &
+    "':' + res.body.charCodeAt(1); })()") == "3:3:65533"
