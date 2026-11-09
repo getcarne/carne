@@ -4,6 +4,6 @@ jobs:
   test:
     uses: nimbase/setup-nim-action/.github/workflows/test_clue.yml@main
     with:
-      os: '[{"os":"macos-15"},{"os":"macos-15-intel"},{"os":"ubuntu-24.04"}]'
+      os: '[{"os":"macos-15"},{"os":"macos-15-intel"},{"os":"ubuntu-24.04"},{"os":"ubuntu-24.04-arm"}]'
       pre-install-command: 'if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get update && sudo apt-get install -y libjavascriptcoregtk-4.1-dev libssl-dev; fi'
       pre-test-command: 'git config --global user.email "carne-ci@openpeeps.dev" && git config --global user.name "carne-ci"'
