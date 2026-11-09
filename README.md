@@ -48,7 +48,7 @@ script that just runs, take Carne.
     `prune` orphans, `refresh` registry data
   - `develop <path>` for editable installs from a local directory
   - `package.json` manifests, npm-spec compliant; public registry
-    at [openpeeps/carnepkgs](https://github.com/openpeeps/carnepkgs)
+    at [getcarne/carnepkgs](https://github.com/getcarne/carnepkgs)
 - Written in Nim language
 - Open Source | `MIT` License
 
@@ -103,7 +103,7 @@ and npm-style sources:
   anything else is rejected, not installed.
 - `carne pkg install <name>[@range]`, `npm:name@range` aliases:
   resolved through the package registry at
-  [openpeeps/carnepkgs](https://github.com/openpeeps/carnepkgs)
+  [getcarne/carnepkgs](https://github.com/getcarne/carnepkgs)
   (source `carne`, cached at `~/.carne/registries/carne.json`;
   `carne pkg refresh` re-downloads it).
 - `carne pkg develop [path]`: editable installs from a local directory
@@ -111,7 +111,7 @@ and npm-style sources:
 - `remove`, `update`, `list`, `prune`, `refresh` manage the store.
 - `carne pkg publish [--tags=..] [--web=..] [--url=..] [--dry-run] [--yes]`:
   opens a pull request adding the current package to
-  [openpeeps/carnepkgs](https://github.com/openpeeps/carnepkgs)
+  [getcarne/carnepkgs](https://github.com/getcarne/carnepkgs)
   (fork, insert into `packages.json` in name order, PR against `main`).
   `description`, `license` and `keywords` (registry tags) are required in
   `package.json`; the repo URL comes from `.git/config` (`remote.origin.url`).
@@ -204,7 +204,7 @@ Full API reference with examples: https://openpeeps.github.io/carne/
 - [x] `std/crypto`: X25519 exchange, RSA/ECDSA, AES-GCM
 - [x] `std/gettext` `.mo` file catalogs, `std/svg` stringify (`std/qr` decode deferred)
 - [ ] `exportClass` in the module DSL
-- [x] Public package registry ([openpeeps/carnepkgs](https://github.com/openpeeps/carnepkgs))
+- [x] Public package registry ([getcarne/carnepkgs](https://github.com/getcarne/carnepkgs))
 - [x] `carne pkg publish` (fork + PR flow, `.tokens` auth)
 - [x] Beyond macOS (Linux via JavaScriptCoreGTK 4.1)
 

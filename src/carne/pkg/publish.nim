@@ -1,7 +1,7 @@
 # Carne package publishing on top of the carnepkgs registry.
 #
 # `carne pkg publish` submits the package in the current directory by
-# opening a pull request against https://github.com/openpeeps/carnepkgs
+# opening a pull request against https://github.com/getcarne/carnepkgs
 # (fork, insert entry into packages.json, PR) — the same flow as
 # `clue publish` against nim-lang/packages.
 #
@@ -27,7 +27,7 @@ import pkg/datpkgr/[store, types]
 import ./pkgmanifest
 
 const
-  publishUpstream* = "openpeeps/carnepkgs"
+  publishUpstream* = "getcarne/carnepkgs"
   publishUpstreamUrl* = "https://github.com/" & publishUpstream
   publishApiBase* = "https://api.github.com/repos/"
   publishApiRoot* = "https://api.github.com"

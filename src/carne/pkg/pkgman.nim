@@ -23,8 +23,8 @@ export config, install, operations, store, types
 export pkgmanifest
 
 const pkgRegistryUrl* =
-  "https://raw.githubusercontent.com/openpeeps/carnepkgs/main/packages.json"
-  ## The default packages registry (openpeeps/carnepkgs).
+  "https://raw.githubusercontent.com/getcarne/carnepkgs/main/packages.json"
+  ## The default packages registry (getcarne/carnepkgs).
 
 const pkgDefaultSourceName* = "carne"
   ## The default registry source name in sources.json.
