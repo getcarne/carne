@@ -21,6 +21,7 @@
 #   os.configDir()            -> string
 #   os.cacheDir()             -> string
 #   os.pid()                  -> int
+#   os.cpuCount()             -> int (logical processors, >= 1)
 #   os.sleep(ms)              -> undefined (blocks the loop)
 #   os.exec(cmd)              -> {code, output} (blocks the loop)
 #
@@ -333,6 +334,10 @@ init proc(module: Module) =
     module.registerFn pid():
       ## os.pid() -> current process id
       toJS(ctx, int(getCurrentProcessId()))
+
+    module.registerFn cpuCount():
+      ## os.cpuCount() -> logical processor count (>= 1)
+      toJS(ctx, max(countProcessors(), 1))
 
     module.registerFn sleep(ms: int):
       ## os.sleep(ms) -> undefined (blocks the loop)

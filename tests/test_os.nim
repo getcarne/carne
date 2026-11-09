@@ -230,6 +230,11 @@ test "os dir helpers return non-empty paths":
 test "os pid is positive":
   check runCode("require('std/os').pid() > 0") == "true"
 
+test "os cpuCount is at least one":
+  check runCode("require('std/os').cpuCount() >= 1") == "true"
+  check runCode(
+    "Number.isInteger(require('std/os').cpuCount())") == "true"
+
 test "os sleep waits and rejects negatives":
   check runCode("typeof require('std/os').sleep(5)") == "undefined"
   expect CarneError:

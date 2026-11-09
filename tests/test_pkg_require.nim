@@ -1,9 +1,14 @@
 import std/os
+import std/strutils
 import unittest
 
 import carne
+import carne/modules
 import carne/pkg/loader
 import carne/pkg/pkgman
+import carne/std/http
+
+registerStd("std/http", http.install)
 
 proc freshHome(): string =
   result = getTempDir() / "carne_pkgreq_test"
@@ -155,3 +160,24 @@ test "runFile supports sibling relative requires":
   writeFile(dir / "lib.js", "module.exports = { name: \"lib\" };\n")
   writeFile(dir / "main.js", "require(\"./lib\").name + \"!\";\n")
   check runFile(dir / "main.js") == "lib!"
+
+test "pkg require under http workers serves on every worker":
+  # Workers re-run the script on separate threads and resolve pkg/
+  # concurrently against a store that is not thread-safe. Without
+  # serialization in the loader this flakes with store file errors.
+  let home = freshHome()
+  defer: removeDir(home)
+  discard setupFixtures(home)
+  var expected: seq[string] = @[]
+  for _ in 0 ..< 8:
+    expected.add("200:greet-0.2.0+u2")
+  check runCode(
+    "const greet = require('pkg/greet'); " &
+    "const http = require('std/http'); " &
+    "http.serve(18250, {workers: 8}, req => greet.who()); " &
+    "(async () => { " &
+    "if (process.isWorker) return 'worker'; " &
+    "const rs = await Promise.all([0, 1, 2, 3, 4, 5, 6, 7].map(() => " &
+    "http.fetch('http://127.0.0.1:18250/').then(r => r.status + ':' + r.body))); " &
+    "http.close(18250); " &
+    "return rs.join(','); })()") == expected.join(",")

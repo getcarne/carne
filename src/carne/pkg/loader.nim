@@ -12,7 +12,7 @@
 # v1 out of scope with explicit errors: ESM (import/export syntax),
 # bare `require("name")`, non-JS entries.
 
-import std/[options, os, strutils, tables]
+import std/[atomics, locks, options, os, strutils, tables]
 
 import javascriptcore
 
@@ -21,6 +21,23 @@ import ../modules
 import ./pkgman
 
 var loaderCfg: DatpkgrConfig = nil
+
+var pkgResolveLock: Lock
+var pkgResolveLockState: Atomic[int]
+  ## Process-wide pkg resolution lock (once-init below). Http workers
+  ## re-run the script on separate threads, and the package store is
+  ## not thread-safe, so concurrent `pkg/` resolves race on the store
+  ## files. Resolution is startup-only (instances cache per runtime),
+  ## so serializing here costs nothing at steady state.
+
+proc ensurePkgResolveLock() =
+  if pkgResolveLockState.load(moAcquire) != 2:
+    if pkgResolveLockState.exchange(1, moAcquireRelease) == 0:
+      initLock(pkgResolveLock)
+      pkgResolveLockState.store(2, moRelease)
+    else:
+      while pkgResolveLockState.load(moAcquire) != 2:
+        cpuRelax()
 
 proc looksEsm(code: string): bool =
   ## Line-anchored import/export keyword heuristic (`//` comments
@@ -115,18 +132,29 @@ proc requirePkg(ctx: JSContextRef; rt: Runtime; spec: string;
   if name.len == 0 or name == "." or name == "..":
     throwError(ctx, "require: unknown module \"" & spec & "\"", exception)
     return nil
-  let root = loaderCfg.resolveInstalledPath(name, ver)
-  if root.len == 0 or not dirExists(root):
-    throwError(ctx, "require: unknown package \"" & spec &
-      "\" (is it installed? see `carne pkg list`)", exception)
-    return nil
-  let sub = if rest.len > 0: "/" & rest else: ""
-  let resolved = loaderCfg.resolvePkgImport("pkg/" & name & sub, ver)
-  if resolved.isNone:
-    throwError(ctx, "require: package \"" & spec &
-      "\" has no loadable entry (no main/exports/index.js)", exception)
-    return nil
-  loadJsFile(ctx, rt, spec, resolved.get, exception)
+  # Resolve under the process-wide lock: the store underneath is not
+  # thread-safe and http workers resolve concurrently. Only the lookup
+  # is serialized — loading and running the module stays per-runtime.
+  # (Nested `pkg/` requires inside module code re-enter cleanly since
+  # the lock is released before loadJsFile runs.)
+  var path = ""
+  ensurePkgResolveLock()
+  withLock pkgResolveLock:
+    if loaderCfg == nil:
+      loaderCfg = newCarnePkgConfig(ensureSource = false)
+    let root = loaderCfg.resolveInstalledPath(name, ver)
+    if root.len == 0 or not dirExists(root):
+      throwError(ctx, "require: unknown package \"" & spec &
+        "\" (is it installed? see `carne pkg list`)", exception)
+      return nil
+    let sub = if rest.len > 0: "/" & rest else: ""
+    let resolved = loaderCfg.resolvePkgImport("pkg/" & name & sub, ver)
+    if resolved.isNone:
+      throwError(ctx, "require: package \"" & spec &
+        "\" has no loadable entry (no main/exports/index.js)", exception)
+      return nil
+    path = resolved.get
+  loadJsFile(ctx, rt, spec, path, exception)
 
 proc requireRelative(ctx: JSContextRef; rt: Runtime; spec: string;
     exception: ptr JSValueRef): JSValueRef =
@@ -147,8 +175,6 @@ proc requireRelative(ctx: JSContextRef; rt: Runtime; spec: string;
 
 proc pkgRequireImpl(ctx: JSContextRef; spec: string;
     exception: ptr JSValueRef): JSValueRef =
-  if loaderCfg == nil:
-    loaderCfg = newCarnePkgConfig(ensureSource = false)
   let rt = currentRt()
   if rt == nil:
     throwError(ctx, "require: no runtime", exception)
