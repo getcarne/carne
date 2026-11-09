@@ -57,7 +57,7 @@ script that just runs, take Carne.
 ```
 A JavaScript runtime in Nim
   (c) OpenPeeps | MIT License
-  Build Version: 0.1.0
+  Build Version: 0.1.2
 
 usage: carne <command> [args] [options]
 
@@ -68,7 +68,7 @@ Scripting
 Standard library
   std init                download JS stdlib (std/*) into ~/.carne/std
   std update              refresh all JS stdlib files
-  std list                show installed JS stdlib version and files
+  std list                show all std modules (built-in and JS)
 
 Packages
   pkg install <spec>      install a package by name, git URL (--url=... pins a source URL)
@@ -82,6 +82,9 @@ Packages
 
 Versioning
   bump [semver] [--level=..] [--dep=..] bump version in package.json (or a direct dep)
+
+Inspect
+  dump [pkg[@ref]]        print package.json (cwd or an installed package)
 
   -h, --help              show this help
   --version               show version
@@ -119,6 +122,9 @@ and npm-style sources:
   `optionalDependencies`, `peerDependencies`), keeping the range
   prefix (`^0.1.0` patch-bumps to `^0.1.1`). Only the bumped value
   changes; formatting is preserved.
+- `carne dump [pkg[@ref]]`: prints the raw `package.json` — the one
+  found from the cwd upwards, or an installed package's (develop
+  checkouts included).
 - `carne pkg publish [--tags=..] [--web=..] [--url=..] [--dry-run] [--yes]`:
   opens a pull request adding the current package to
   [getcarne/carnepkgs](https://github.com/getcarne/carnepkgs)

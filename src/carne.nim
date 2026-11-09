@@ -7,13 +7,15 @@ import ./carne/runtime
 export runtime
 
 when isMainModule:
-  import std/[os, parseopt, strutils]
+  import std/[algorithm, os, parseopt, strutils]
 
   import ./carne/cli
+  import ./carne/modules
   import ./carne/std/all
   import ./carne/pkg/pkgman
   import ./carne/pkg/publish
   import ./carne/pkg/bump
+  import ./carne/pkg/dump
   import ./carne/pkg/loader
   import ./carne/pkg/stdsync
 
@@ -199,16 +201,25 @@ when isMainModule:
     let v = if args.len == 1: args[0] else: ""
     bumpCommand(getCurrentDir(), v, level, dep)
 
+  proc runDump(args: seq[string]): int =
+    ## `carne dump [pkg[@ref]]`: print a package.json (cwd or store).
+    if args.len > 1:
+      displayError("usage: carne dump [pkg[@ref]]")
+      return 1
+    let spec = if args.len == 1: args[0] else: ""
+    dumpCommand(getCurrentDir(), spec)
+
   proc printStdHelp() =
     echo "usage: carne std <init|update|list>"
     echo ""
     echo "  init                        " & grey("download JS stdlib (std/*) into ~/.carne/std")
     echo "  update                      " & grey("refresh all JS stdlib files")
-    echo "  list                        " & grey("show installed JS stdlib version and files")
+    echo "  list                        " & grey("show all std modules (built-in and JS)")
 
   proc runStd(args: seq[string]): int =
-    ## JS-based standard library in the ~/.carne home (CARNE_HOME
-    ## overrides). Nim-based modules stay embedded in the binary.
+    ## Standard library inventory: Nim modules are embedded in the
+    ## binary (built-in), JS modules live in the ~/.carne home
+    ## (`carne std init` downloads them; CARNE_HOME overrides).
     if args.len == 0:
       printStdHelp()
       return 1
@@ -237,14 +248,23 @@ when isMainModule:
         displayError("usage: carne std list")
         return 1
       let s = stdStatus()
-      if not s.found:
-        displayError("no JS stdlib installed (run `carne std init`)")
-        return 1
-      let at = if s.refUsed.len > 0: " (" & s.refUsed & ")" else: ""
-      displayInfo("std " & s.version & at & ":")
-      for e in s.entries:
-        let mark = if e.present: "installed" else: "missing"
-        display(span("  " & e.name & "  " & grey(e.file & " (" & mark & ")")))
+      if s.found:
+        let at = if s.refUsed.len > 0: " (" & s.refUsed & ")" else: ""
+        displayInfo("std " & s.version & at & ":")
+      else:
+        displayInfo("std (no JS stdlib installed, run `carne std init`):")
+      for name in registeredStdNames():
+        display(span("  " & name & "  " & grey("(built-in)")))
+      if s.found:
+        var names: seq[string] = @[]
+        for e in s.entries:
+          names.add(e.name)
+        for name in sorted(names):
+          for e in s.entries:
+            if e.name == name:
+              let mark = if e.present: "installed" else: "missing"
+              display(span("  std/" & e.name & "  " &
+                grey(e.file & " (" & mark & ")")))
       return 0
     else:
       displayError("unknown std command `" & args[0] & "`")
@@ -343,6 +363,9 @@ when isMainModule:
     of "bump":
       # local semver bumps for package.json (or one direct dep)
       return runBump(positionals, bumpLevel, bumpDep, bumpMissing)
+    of "dump":
+      # print a package.json (cwd upward, or an installed package)
+      return runDump(positionals)
     of "test":
       # test runner over tests/**/*.test.js
       return runTestCommand(positionals)
