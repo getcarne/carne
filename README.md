@@ -80,6 +80,9 @@ Packages
   pkg refresh             re-download registry data
   pkg publish [opts]      open a PR adding this package to the registry
 
+Versioning
+  bump [semver] [--level=..] [--dep=..] bump version in package.json (or a direct dep)
+
   -h, --help              show this help
   --version               show version
 ```
@@ -109,6 +112,13 @@ and npm-style sources:
 - `carne pkg develop [path]`: editable installs from a local directory
   (default: current dir).
 - `remove`, `update`, `list`, `prune`, `refresh` manage the store.
+- `carne bump [semver] [--level=major|minor|patch] [--dep=name]`:
+  bumps the version in the local `package.json` (default: patch;
+  explicit semver sets it). With `--dep=name` it bumps that direct
+  dependency's spec instead (`dependencies`, `devDependencies`,
+  `optionalDependencies`, `peerDependencies`), keeping the range
+  prefix (`^0.1.0` patch-bumps to `^0.1.1`). Only the bumped value
+  changes; formatting is preserved.
 - `carne pkg publish [--tags=..] [--web=..] [--url=..] [--dry-run] [--yes]`:
   opens a pull request adding the current package to
   [getcarne/carnepkgs](https://github.com/getcarne/carnepkgs)

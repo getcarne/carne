@@ -13,6 +13,7 @@ when isMainModule:
   import ./carne/std/all
   import ./carne/pkg/pkgman
   import ./carne/pkg/publish
+  import ./carne/pkg/bump
   import ./carne/pkg/loader
   import ./carne/pkg/stdsync
 
@@ -185,6 +186,19 @@ when isMainModule:
       files.add(f)
     return runTestFiles(files)
 
+  proc runBump(args: seq[string]; level, dep, missing: string): int =
+    ## `carne bump [semver] [--level=..] [--dep=..]`: semver bumps for
+    ## the local package.json (or one direct dependency with --dep).
+    if missing.len > 0:
+      displayError("option --" & missing & " needs a value")
+      return 1
+    if args.len > 1:
+      displayError("usage: carne bump [semver] " &
+        "[--level=major|minor|patch] [--dep=name]")
+      return 1
+    let v = if args.len == 1: args[0] else: ""
+    bumpCommand(getCurrentDir(), v, level, dep)
+
   proc printStdHelp() =
     echo "usage: carne std <init|update|list>"
     echo ""
@@ -247,15 +261,29 @@ when isMainModule:
     var pkgWeb = ""
     var pkgDryRun = false
     var pkgYes = false
+    var bumpLevel = ""
+    var bumpDep = ""
+    var bumpPending = ""
+    var bumpMissing = ""
     var p = initOptParser(commandLineParams())
     for kind, key, val in p.getopt():
       case kind
       of cmdArgument:
-        if command == "":
+        if bumpPending.len > 0:
+          case bumpPending
+          of "level": bumpLevel = key
+          of "dep": bumpDep = key
+          else: discard
+          bumpPending = ""
+        elif command == "":
           command = key
         else:
           positionals.add(key)
       of cmdLongOption, cmdShortOption:
+        if bumpPending.len > 0:
+          # `--level`/`--dep` with no value before the next option.
+          bumpMissing = bumpPending
+          bumpPending = ""
         case key
         of "help", "h":
           showHelp = true
@@ -271,12 +299,25 @@ when isMainModule:
           pkgDryRun = true
         of "yes", "Y":
           pkgYes = true
+        of "level":
+          if val.len > 0:
+            bumpLevel = val
+          else:
+            bumpPending = "level"
+        of "dep":
+          if val.len > 0:
+            bumpDep = val
+          else:
+            bumpPending = "dep"
         else:
           displayError("unknown option --" & key)
           printHelp()
           return 1
       of cmdEnd:
         discard
+    if bumpPending.len > 0:
+      bumpMissing = bumpPending
+      bumpPending = ""
     if showVersion:
       echo versionStr
       return 0
@@ -299,6 +340,9 @@ when isMainModule:
     of "pkg":
       # package management on the ~/.carne home
       return runPkg(positionals, pkgUrl, pkgTags, pkgWeb, pkgDryRun, pkgYes)
+    of "bump":
+      # local semver bumps for package.json (or one direct dep)
+      return runBump(positionals, bumpLevel, bumpDep, bumpMissing)
     of "test":
       # test runner over tests/**/*.test.js
       return runTestCommand(positionals)

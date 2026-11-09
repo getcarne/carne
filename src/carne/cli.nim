@@ -251,5 +251,8 @@ proc printHelp*() =
   echo "  pkg refresh             " & grey("re-download registry data")
   echo "  pkg publish [opts]      " & grey("open a PR adding this package to the registry")
   echo ""
+  echo label("Versioning")
+  echo "  bump [semver] [--level=..] [--dep=..] " & grey("bump version in package.json (or a direct dep)")
+  echo ""
   echo "  -h, --help              " & grey("show this help")
   echo "  --version               " & grey("show version")
