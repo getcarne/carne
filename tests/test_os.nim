@@ -203,6 +203,21 @@ test "os copy and move roundtrip":
   check readFile(moved) == "payload"
   check not fileExists(dst)
 
+test "os symlink roundtrip":
+  let target = tmpPath("link_target.txt")
+  let link = tmpPath("link_alias.txt")
+  defer: removeFile(target)
+  defer: removeFile(link)
+  writeFile(target, "payload")
+  discard runCode(
+    "require('std/os').symlink('" & target & "', '" & link & "')")
+  check runCode("require('std/os').isSymlink('" & link & "')") == "true"
+  check runCode("require('std/os').isSymlink('" & target & "')") == "false"
+  check runCode("require('std/os').readLink('" & link & "')") == target
+  check runCode("require('std/os').readFile('" & link & "')") == "payload"
+  expect CarneError:
+    discard runCode("require('std/os').readLink('" & target & "')")
+
 test "os stat reports size, kind and times":
   let p = tmpPath("stat.txt")
   defer: removeFile(p)
@@ -216,6 +231,24 @@ test "os stat reports size, kind and times":
   check runCode(
     "const s = require('std/os').stat('" & p & "'); " &
     "s.mtimeMs > 0 && s.atimeMs > 0") == "true"
+
+test "os chmod sets mode and stat reports it":
+  let p = tmpPath("chmod.txt")
+  defer: removeFile(p)
+  writeFile(p, "hi")
+  discard runCode(
+    "require('std/os').chmod('" & p & "', 420)")
+  check runCode(
+    "require('std/os').stat('" & p & "').mode") == "420"
+  discard runCode(
+    "require('std/os').chmod('" & p & "', 384)")
+  check runCode(
+    "require('std/os').stat('" & p & "').mode") == "384"
+  expect CarneError:
+    discard runCode("require('std/os').chmod('" & p & "', 512)")
+  expect CarneError:
+    discard runCode(
+      "require('std/os').chmod('/no/such/carne_file_xyz', 420)")
 
 test "os stat missing throws":
   expect CarneError:

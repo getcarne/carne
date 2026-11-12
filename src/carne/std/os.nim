@@ -15,7 +15,11 @@
 #   os.removeDir(path[, recursive]) -> undefined
 #   os.copy(src, dst)         -> undefined (files)
 #   os.move(src, dst)         -> undefined (files and dirs)
-#   os.stat(path)             -> {size, kind, mtimeMs, atimeMs}
+#   os.stat(path)             -> {size, kind, mtimeMs, atimeMs, mode}
+#   os.chmod(path, mode)      -> undefined (mode: e.g. 420 for 0o644)
+#   os.symlink(target, path)  -> undefined (create a symlink at path)
+#   os.readLink(path)         -> string (symlink target)
+#   os.isSymlink(path)        -> bool
 #   os.tmpdir()               -> string
 #   os.homedir()              -> string
 #   os.configDir()            -> string
@@ -48,6 +52,31 @@ proc statToJson(info: FileInfo): JsonNode =
   result["kind"] = %kindName(info.kind)
   result["mtimeMs"] = %toMs(info.lastWriteTime)
   result["atimeMs"] = %toMs(info.lastAccessTime)
+
+proc permsToMode(perms: set[FilePermission]): int =
+  ## 9-bit Unix mode from a permission set (e.g. 0o644).
+  if fpUserRead in perms: result += 0o400
+  if fpUserWrite in perms: result += 0o200
+  if fpUserExec in perms: result += 0o100
+  if fpGroupRead in perms: result += 0o040
+  if fpGroupWrite in perms: result += 0o020
+  if fpGroupExec in perms: result += 0o010
+  if fpOthersRead in perms: result += 0o004
+  if fpOthersWrite in perms: result += 0o002
+  if fpOthersExec in perms: result += 0o001
+
+proc modeToPerms(mode: int): set[FilePermission] =
+  ## Permission set from a 9-bit Unix mode (masked with 0o777).
+  let m = mode and 0o777
+  if (m and 0o400) != 0: result.incl(fpUserRead)
+  if (m and 0o200) != 0: result.incl(fpUserWrite)
+  if (m and 0o100) != 0: result.incl(fpUserExec)
+  if (m and 0o040) != 0: result.incl(fpGroupRead)
+  if (m and 0o020) != 0: result.incl(fpGroupWrite)
+  if (m and 0o010) != 0: result.incl(fpGroupExec)
+  if (m and 0o004) != 0: result.incl(fpOthersRead)
+  if (m and 0o002) != 0: result.incl(fpOthersWrite)
+  if (m and 0o001) != 0: result.incl(fpOthersExec)
 
 proc mkdirRecursive(path: string) =
   ## createDir through missing parents (no-op when path exists).
@@ -291,12 +320,59 @@ init proc(module: Module) =
       JSValueMakeUndefined(ctx)
 
     module.registerFn stat(path: string):
-      ## os.stat(path) -> {size, kind, mtimeMs, atimeMs}
+      ## os.stat(path) -> {size, kind, mtimeMs, atimeMs, mode}
       try:
-        returnJson(ctx, statToJson(getFileInfo(path)), "stat", exception)
+        var node = statToJson(getFileInfo(path))
+        try:
+          node["mode"] = newJInt(permsToMode(getFilePermissions(path)))
+        except OSError, IOError:
+          node["mode"] = newJInt(0)
+        returnJson(ctx, node, "stat", exception)
       except OSError as e:
         throwError(ctx, "stat: " & e.msg, exception)
         nil
+
+    module.registerFn chmod(path: string, mode: int):
+      ## os.chmod(path, mode) -> undefined (mode is a Unix mode, e.g. 420 for 0o644)
+      if mode < 0 or mode > 0o777:
+        throwError(ctx, "chmod: mode out of range (0..511)", exception)
+        return nil
+      try:
+        setFilePermissions(path, modeToPerms(mode))
+      except OSError as e:
+        throwError(ctx, "chmod: " & e.msg, exception)
+        return nil
+      except IOError as e:
+        throwError(ctx, "chmod: " & e.msg, exception)
+        return nil
+      JSValueMakeUndefined(ctx)
+
+    module.registerFn symlink(target: string, path: string):
+      ## os.symlink(target, path) -> undefined (create a symlink at path)
+      try:
+        createSymlink(target, path)
+      except OSError as e:
+        throwError(ctx, "symlink: " & e.msg, exception)
+        return nil
+      except IOError as e:
+        throwError(ctx, "symlink: " & e.msg, exception)
+        return nil
+      JSValueMakeUndefined(ctx)
+
+    module.registerFn readLink(path: string):
+      ## os.readLink(path) -> string (symlink target)
+      try:
+        toJS(ctx, expandSymlink(path))
+      except OSError as e:
+        throwError(ctx, "readLink: " & e.msg, exception)
+        nil
+      except IOError as e:
+        throwError(ctx, "readLink: " & e.msg, exception)
+        nil
+
+    module.registerFn isSymlink(path: string):
+      ## os.isSymlink(path) -> bool
+      toJS(ctx, symlinkExists(path))
 
     module.registerFn tmpdir():
       ## os.tmpdir() -> temp directory path

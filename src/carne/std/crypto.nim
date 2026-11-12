@@ -3,6 +3,7 @@
 #
 #   const crypto = require("std/crypto");
 #   crypto.hash.sha256hex("abc")     -> hex digest (lowercase)
+#   crypto.hash.md5("abc")           -> hex digest (lowercase, legacy interop only)
 #   crypto.aead.seal(text, keyHex)   -> {nonce, mac, cipher} (hex)
 #   crypto.aead.open(env, keyHex)    -> text (throws on MAC failure)
 #   crypto.sign.keypair()            -> {publicKey, secretKey} hex
@@ -81,6 +82,15 @@ proc doSha256(ctx: JSContextRef; text: string; docBlock: string;
   const name = "hash.sha256hex"
   try:
     toJS(ctx, hexOut(sha256(text)))
+  except CatchableError as e:
+    cryptoErr(ctx, docBlock, name, e.msg, exception)
+    nil
+
+proc doMd5(ctx: JSContextRef; text: string; docBlock: string;
+    exception: ptr JSValueRef): JSValueRef =
+  const name = "hash.md5"
+  try:
+    toJS(ctx, md5Hex(text).toLowerAscii())
   except CatchableError as e:
     cryptoErr(ctx, docBlock, name, e.msg, exception)
     nil
@@ -745,6 +755,10 @@ init proc(module: Module) =
     ## hash.sha256hex(text) -> hex digest
     return doSha256(ctx, text, docBlock, exception)
 
+  ctx.registerFn hashMd5(text: string):
+    ## hash.md5(text) -> hex digest (legacy interop only, do not use for security)
+    return doMd5(ctx, text, docBlock, exception)
+
   ctx.registerFn hashSha384(text: string):
     ## hash.sha384hex(text) -> hex digest
     return doSha384(ctx, text, docBlock, exception)
@@ -852,6 +866,8 @@ init proc(module: Module) =
       exception)
 
   # Plain-object property sets cannot throw; no setupEx in scope here.
+  setProp(module.ctx, hashNs, "md5",
+    makeFunction(module.ctx, "md5", hashMd5), nil)
   setProp(module.ctx, hashNs, "sha256hex",
     makeFunction(module.ctx, "sha256hex", hashSha256), nil)
   setProp(module.ctx, hashNs, "sha384hex",
