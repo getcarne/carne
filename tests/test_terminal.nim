@@ -8,15 +8,16 @@ import carne/std/terminal
 
 registerStd("std/terminal", terminal.install)
 
-proc withOverride(v: bool; body: proc()) =
+template withOverride(v: bool; body: untyped) =
   ## Runs body with the CLI --isatty override forced, restoring
   ## afterwards even on failure.
-  let old = colorTtyOverride
-  colorTtyOverride = some(v)
-  try:
-    body()
-  finally:
-    colorTtyOverride = old
+  block:
+    let oldOverride = colorTtyOverride
+    colorTtyOverride = some(v)
+    try:
+      body
+    finally:
+      colorTtyOverride = oldOverride
 
 const esc = "\u001b"
 

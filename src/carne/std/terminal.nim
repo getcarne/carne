@@ -20,7 +20,6 @@
 # touch the real terminal and block the loop like os.exec: fine in
 # scripts, stalls servers.
 
-import std/os
 import std/strutils
 import std/options
 import std/tables
@@ -343,7 +342,7 @@ init proc(module: Module) =
       let h = terminalHeight()
       toJS(ctx, if h > 0: h else: 24)
 
-    module.registerFn readLine(prompt?: string):
+    module.registerFn readLine(prompt ?: string):
       ## terminal.readLine([prompt]) -> line | null (null on EOF,
       ## blocks the loop like os.exec)
       if prompt.len > 0:
@@ -363,7 +362,7 @@ init proc(module: Module) =
         return nil
       toJS(ctx, line)
 
-    module.registerFn readPassword(prompt?: string):
+    module.registerFn readPassword(prompt ?: string):
       ## terminal.readPassword([prompt]) -> password | null (no echo,
       ## null on EOF, blocks the loop like os.exec)
       var pw = ""
@@ -376,7 +375,7 @@ init proc(module: Module) =
         return nil
       toJS(ctx, pw)
 
-    module.registerFn parseArgs(argv?: NimValue, opts?: NimValue):
+    module.registerFn parseArgs(argv ?: NimValue, opts ?: NimValue):
       ## terminal.parseArgs([argv][, opts]) -> {_: [...], ...}
       ## argv defaults to the script's own args (past `carne script.js`).
       ## opts takes {boolean?, string?, alias?, default?, positional?}.
