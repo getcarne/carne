@@ -37,6 +37,7 @@ import ./uuid
 import ./nanoid
 import ./url
 import ./watcher
+import ./terminal
 import ./db
 
 registerStd("std/env", env.install)
@@ -70,4 +71,5 @@ registerStd("std/uuid", uuid.install)
 registerStd("std/nanoid", nanoid.install)
 registerStd("std/url", url.install)
 registerStd("std/watcher", watcher.install)
+registerStd("std/terminal", terminal.install)
 registerStd("std/db/driver", db.installDriver)

@@ -204,6 +204,7 @@ processing, crypto, networking, and developer tools:
 - `std/nanoid` - URL-friendly id generation
 - `std/url` - URL parsing and formatting
 - `std/watcher` - file watching (async watch + sync watchOnce)
+- `std/terminal` - terminal styling, size, raw output, reads, CLI arg parsing
 - `std/test` - minimal test runner (test/describe/expect/assert, fetched via `carne std init`)
 - `std/db` - async + sync database driver and ORM (sqlite, postgres, fetched via `carne std init`)
 
