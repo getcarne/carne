@@ -13,6 +13,7 @@ when isMainModule:
   import ./carne/modules
   import ./carne/std/all
   import ./carne/pkg/pkgman
+  import ./carne/pkg/init
   import ./carne/pkg/publish
   import ./carne/pkg/bump
   import ./carne/pkg/dump
@@ -37,6 +38,9 @@ when isMainModule:
   proc printPkgHelp() =
     echo "usage: carne pkg <command> [args] [options]"
     echo ""
+    cmdHelp("init [dir]",
+      "scaffold a new package (wizard, -Y skips it)")
+    flagHelp("--yes, -Y", "skip the wizard, use defaults")
     cmdHelp("install <spec>",
       "registry name, git URL, gh:user/repo alias, name#ref, or name + source URL")
     flagHelp("--url:<url>", "pin a source URL")
@@ -64,6 +68,12 @@ when isMainModule:
       return 1
     let cfg = newCarnePkgConfig()
     case args[0]
+    of "init":
+      if args.len > 2:
+        displayError("usage: carne pkg init [dir] [--yes]")
+        return 1
+      let target = if args.len == 2: args[1] else: ""
+      return initCommand(getCurrentDir(), target, pkgYes)
     of "install":
       if args.len < 2:
         displayError("package name or URL is required")

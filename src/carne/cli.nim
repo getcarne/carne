@@ -284,6 +284,9 @@ proc printHelp*() =
   cmdHelp("std list", "show installed JS stdlib version and files")
   echo ""
   echo label("Packages:")
+  cmdHelp("pkg init [dir]",
+    "scaffold a new package (wizard, -Y skips it)")
+  flagHelp("--yes, -Y", "skip the wizard, use defaults")
   cmdHelp("pkg install <spec>",
     "install a package by name, git URL, gh:user/repo alias, name#ref, or name + source URL")
   flagHelp("--url:<url>", "pin a source URL")

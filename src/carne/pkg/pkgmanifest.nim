@@ -55,7 +55,7 @@ proc strField(obj: JsonNode; path, field: string): string =
     raise manifestErr(path, "\"" & field & "\" must be a string")
   v.getStr()
 
-proc validateName(path, name: string) =
+proc validateName*(path, name: string) =
   ## npm new-package name rules (minus registry-availability checks).
   if name.len == 0:
     raise manifestErr(path, "\"name\" is required")
