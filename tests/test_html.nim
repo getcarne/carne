@@ -10,7 +10,7 @@ test "html parse element shape":
   let res = runCode(
     "JSON.stringify(require('std/html').parse(" &
     "'<p>hi <b>ada</b></p>'))")
-  check res == """[{"tag":"p","attrs":{},"children":["hi",{"tag":"b","attrs":{},"children":["ada"]}]}]"""
+  check res == """[{"tag":"p","attrs":{},"children":["hi ",{"tag":"b","attrs":{},"children":["ada"]}]}]"""
 
 test "html innerText doc and node":
   check runCode(
@@ -35,7 +35,7 @@ test "html innerText validates input":
 test "html stringify roundtrip":
   check runCode(
     "require('std/html').stringify(require('std/html').parse(" &
-    "'<p>hi <b>ada</b></p>'))") == "<p>hi<b>ada</b></p>"
+    "'<p>hi <b>ada</b></p>'))") == "<p>hi <b>ada</b></p>"
   check runCode(
     "require('std/html').stringify(require('std/html').parse(" &
     "'<br>'))") == "<br>"
