@@ -1,0 +1,105 @@
+nimTitle	bridge	carne/bridge.html	module carne/bridge		0
+nim	TimerEntry	carne/bridge.html#TimerEntry	object TimerEntry		34
+nim	Runtime	carne/bridge.html#Runtime	type Runtime		42
+nim	colorTtyOverride	carne/bridge.html#colorTtyOverride	var colorTtyOverride		66
+nim	currentRt	carne/bridge.html#currentRt	proc currentRt(): Runtime		71
+nim	setCurrentRt	carne/bridge.html#setCurrentRt,Runtime	proc setCurrentRt(rt: Runtime)		75
+nim	inHttpWorker	carne/bridge.html#inHttpWorker	proc inHttpWorker(): bool		82
+nim	markHttpWorker	carne/bridge.html#markHttpWorker	proc markHttpWorker()		85
+nim	ensureLoop	carne/bridge.html#ensureLoop,Runtime	proc ensureLoop(rt: Runtime): Loop		88
+nim	CarneError	carne/bridge.html#CarneError	object CarneError		98
+nim	Module	carne/bridge.html#Module	type Module		100
+nim	valueToString	carne/bridge.html#valueToString,JSContextRef,JSValueRef	proc valueToString(ctx: JSContextRef; value: JSValueRef): string		106
+nim	setProp	carne/bridge.html#setProp,JSContextRef,JSObjectRef,string,JSValueRef,ptr.JSValueRef	proc setProp(ctx: JSContextRef; obj: JSObjectRef; name: string; value: JSValueRef;\n        setupEx: ptr JSValueRef)		115
+nim	newObject	carne/bridge.html#newObject,JSContextRef	proc newObject(ctx: JSContextRef): JSObjectRef		121
+nim	makeFunction	carne/bridge.html#makeFunction,JSContextRef,string,JSObjectCallAsFunctionCallback	proc makeFunction(ctx: JSContextRef; name: string; cb: JSObjectCallAsFunctionCallback): JSObjectRef		124
+nim	toJS	carne/bridge.html#toJS,JSContextRef,string	proc toJS(ctx: JSContextRef; s: string): JSValueRef		131
+nim	toJS	carne/bridge.html#toJS,JSContextRef,int64	proc toJS(ctx: JSContextRef; n: int64): JSValueRef		136
+nim	toJS	carne/bridge.html#toJS,JSContextRef,int	proc toJS(ctx: JSContextRef; n: int): JSValueRef		139
+nim	toJS	carne/bridge.html#toJS,JSContextRef,float	proc toJS(ctx: JSContextRef; f: float): JSValueRef		142
+nim	toJS	carne/bridge.html#toJS,JSContextRef,bool	proc toJS(ctx: JSContextRef; b: bool): JSValueRef		145
+nim	throwError	carne/bridge.html#throwError,JSContextRef,string,ptr.JSValueRef	proc throwError(ctx: JSContextRef; msg: string; exception: ptr JSValueRef)		148
+nim	setPropChecked	carne/bridge.html#setPropChecked,JSContextRef,JSObjectRef,string,JSValueRef,string,ptr.JSValueRef	proc setPropChecked(ctx: JSContextRef; obj: JSObjectRef; name: string;\n               value: JSValueRef; fname: string; exception: ptr JSValueRef): bool		159
+nim	toJSUint8Copy	carne/bridge.html#toJSUint8Copy,JSContextRef,string,string,ptr.JSValueRef	proc toJSUint8Copy(ctx: JSContextRef; s: string; name: string;\n              exception: ptr JSValueRef): JSValueRef		194
+nim	toJSUint8Mmap	carne/bridge.html#toJSUint8Mmap,JSContextRef,pointer,int,string,ptr.JSValueRef	proc toJSUint8Mmap(ctx: JSContextRef; mem: pointer; byteLen: int; name: string;\n              exception: ptr JSValueRef): JSValueRef		219
+nim	makeJSArray	carne/bridge.html#makeJSArray,JSContextRef,openArray[JSValueRef]	proc makeJSArray(ctx: JSContextRef; vals: openArray[JSValueRef]): JSValueRef		246
+nim	optSetStr	carne/bridge.html#optSetStr,JSContextRef,JSObjectRef,string,Option[string],string,ptr.JSValueRef	proc optSetStr(ctx: JSContextRef; obj: JSObjectRef; key: string; v: Option[string];\n          fname: string; exception: ptr JSValueRef): bool		262
+nim	optSetInt	carne/bridge.html#optSetInt,JSContextRef,JSObjectRef,string,Option[int],string,ptr.JSValueRef	proc optSetInt(ctx: JSContextRef; obj: JSObjectRef; key: string; v: Option[int];\n          fname: string; exception: ptr JSValueRef): bool		272
+nim	checkArity	carne/bridge.html#checkArity,csize_t,int,int,string,JSContextRef,ptr.JSValueRef,string	proc checkArity(argumentCount: csize_t; wantMin, wantMax: int; name: string;\n           ctx: JSContextRef; exception: ptr JSValueRef; usage: string = ""): bool		279
+nim	checkArityMin	carne/bridge.html#checkArityMin,csize_t,int,string,JSContextRef,ptr.JSValueRef,string	proc checkArityMin(argumentCount: csize_t; wantMin: int; name: string;\n              ctx: JSContextRef; exception: ptr JSValueRef; usage: string = ""): bool		298
+nim	jakString	carne/bridge.html#jakString	JsArgKind.jakString		314
+nim	jakInt	carne/bridge.html#jakInt	JsArgKind.jakInt		314
+nim	jakFloat	carne/bridge.html#jakFloat	JsArgKind.jakFloat		314
+nim	jakBool	carne/bridge.html#jakBool	JsArgKind.jakBool		314
+nim	jakNimValue	carne/bridge.html#jakNimValue	JsArgKind.jakNimValue		314
+nim	jakObject	carne/bridge.html#jakObject	JsArgKind.jakObject		314
+nim	jakRaw	carne/bridge.html#jakRaw	JsArgKind.jakRaw		314
+nim	jakRest	carne/bridge.html#jakRest	JsArgKind.jakRest		314
+nim	JsArgKind	carne/bridge.html#JsArgKind	enum JsArgKind		314
+nim	RestArgs	carne/bridge.html#RestArgs	type RestArgs		329
+nim	jsDocBlock	carne/bridge.html#jsDocBlock,string	proc jsDocBlock(doc: string): string		332
+nim	throwTypeMismatch	carne/bridge.html#throwTypeMismatch,JSContextRef,string,string,string,string,string,ptr.JSValueRef	proc throwTypeMismatch(ctx: JSContextRef;\n                  fname, pname, actual, want, docBlock: string;\n                  exception: ptr JSValueRef)		347
+nim	maxDumpDepth	carne/bridge.html#maxDumpDepth	const maxDumpDepth		364
+nim	jsSkipped	carne/bridge.html#jsSkipped,JSContextRef,JSValueRef	proc jsSkipped(ctx: JSContextRef; v: JSValueRef): bool		369
+nim	jsonToJS	carne/bridge.html#jsonToJS,JSContextRef,JsonNode	proc jsonToJS(ctx: JSContextRef; node: JsonNode): JSValueRef		377
+nim	jsonNodeToJS	carne/bridge.html#jsonNodeToJS,JSContextRef,JsonNode	proc jsonNodeToJS(ctx: JSContextRef; node: JsonNode): JSValueRef		385
+nim	jsToJson	carne/bridge.html#jsToJson,JSContextRef,JSValueRef,string	proc jsToJson(ctx: JSContextRef; value: JSValueRef; err: var string): JsonNode		423
+nim	jsToJsonNode	carne/bridge.html#jsToJsonNode,JSContextRef,JSValueRef,string	proc jsToJsonNode(ctx: JSContextRef; value: JSValueRef; err: var string): JsonNode		539
+nim	returnJson	carne/bridge.html#returnJson,JSContextRef,JsonNode,string,ptr.JSValueRef	proc returnJson(ctx: JSContextRef; node: JsonNode; name: string;\n           exception: ptr JSValueRef): JSValueRef		547
+nim	stripNulls	carne/bridge.html#stripNulls,JsonNode	proc stripNulls(node: JsonNode): JsonNode		556
+nim	propToJS	carne/bridge.html#propToJS,JSContextRef,string	proc propToJS(ctx: JSContextRef; v: string): JSValueRef		572
+nim	propToJS	carne/bridge.html#propToJS,JSContextRef,int	proc propToJS(ctx: JSContextRef; v: int): JSValueRef		577
+nim	propToJS	carne/bridge.html#propToJS,JSContextRef,int64	proc propToJS(ctx: JSContextRef; v: int64): JSValueRef		580
+nim	propToJS	carne/bridge.html#propToJS,JSContextRef,float	proc propToJS(ctx: JSContextRef; v: float): JSValueRef		583
+nim	propToJS	carne/bridge.html#propToJS,JSContextRef,bool	proc propToJS(ctx: JSContextRef; v: bool): JSValueRef		586
+nim	propToJS	carne/bridge.html#propToJS,JSContextRef,JsonNode	proc propToJS(ctx: JSContextRef; v: JsonNode): JSValueRef		589
+nim	nvkUndefined	carne/bridge.html#nvkUndefined	NimValueKind.nvkUndefined		597
+nim	nvkNull	carne/bridge.html#nvkNull	NimValueKind.nvkNull		597
+nim	nvkBool	carne/bridge.html#nvkBool	NimValueKind.nvkBool		597
+nim	nvkInt	carne/bridge.html#nvkInt	NimValueKind.nvkInt		597
+nim	nvkFloat	carne/bridge.html#nvkFloat	NimValueKind.nvkFloat		597
+nim	nvkString	carne/bridge.html#nvkString	NimValueKind.nvkString		597
+nim	nvkArray	carne/bridge.html#nvkArray	NimValueKind.nvkArray		597
+nim	nvkObject	carne/bridge.html#nvkObject	NimValueKind.nvkObject		597
+nim	nvkFunction	carne/bridge.html#nvkFunction	NimValueKind.nvkFunction		597
+nim	nvkSymbol	carne/bridge.html#nvkSymbol	NimValueKind.nvkSymbol		597
+nim	nvkBigInt	carne/bridge.html#nvkBigInt	NimValueKind.nvkBigInt		597
+nim	NimValueKind	carne/bridge.html#NimValueKind	enum NimValueKind		597
+nim	NimValue	carne/bridge.html#NimValue	object NimValue		604
+nim	jsTypeName	carne/bridge.html#jsTypeName,NimValueKind	proc jsTypeName(kind: NimValueKind): string		620
+nim	fromJS	carne/bridge.html#fromJS,JSContextRef,JSValueRef,string	proc fromJS(ctx: JSContextRef; v: JSValueRef; err: var string): NimValue		724
+nim	toJS	carne/bridge.html#toJS,JSContextRef,NimValue	proc toJS(ctx: JSContextRef; v: NimValue): JSValueRef		731
+nim	nimArg	carne/bridge.html#nimArg,JSContextRef,ptr.UncheckedArray[JSValueRef],int,string,ptr.JSValueRef,NimValue,string	proc nimArg(ctx: JSContextRef; args: ptr UncheckedArray[JSValueRef]; i: int;\n       name: string; exception: ptr JSValueRef; val: var NimValue; prefix = ""): bool		781
+nim	jsKindName	carne/bridge.html#jsKindName,JSContextRef,JSValueRef	proc jsKindName(ctx: JSContextRef; v: JSValueRef): string		798
+nim	objRefCheck	carne/bridge.html#objRefCheck,JSContextRef,JSValueRef,string,string,string,ptr.JSValueRef	proc objRefCheck(ctx: JSContextRef; v: JSValueRef; fname, pname, docBlock: string;\n            exception: ptr JSValueRef): bool		815
+nim	objArg	carne/bridge.html#objArg,JSContextRef,ptr.UncheckedArray[JSValueRef],int,string,ptr.JSValueRef,JSValueRef	proc objArg(ctx: JSContextRef; args: ptr UncheckedArray[JSValueRef]; i: int;\n       name: string; exception: ptr JSValueRef; obj: var JSValueRef): bool		827
+nim	getField	carne/bridge.html#getField,JSContextRef,JSValueRef,string,string	proc getField(ctx: JSContextRef; obj: JSValueRef; key: string; err: var string): NimValue		844
+nim	asString	carne/bridge.html#asString,NimValue,string	proc asString(v: NimValue; what: string): string		862
+nim	asBool	carne/bridge.html#asBool,NimValue,string	proc asBool(v: NimValue; what: string): bool		869
+nim	asInt	carne/bridge.html#asInt,NimValue,string	proc asInt(v: NimValue; what: string): int64		875
+nim	asFloat	carne/bridge.html#asFloat,NimValue,string	proc asFloat(v: NimValue; what: string): float		891
+nim	asArray	carne/bridge.html#asArray,NimValue,string	proc asArray(v: NimValue; what: string): seq[NimValue]		902
+nim	asObject	carne/bridge.html#asObject,NimValue,string	proc asObject(v: NimValue; what: string): OrderedTable[string, NimValue]		908
+nim	hasKey	carne/bridge.html#hasKey,NimValue,string	proc hasKey(v: NimValue; key: string): bool		914
+nim	get	carne/bridge.html#get,NimValue,string,string	proc get(v: NimValue; key: string; what: string): NimValue		918
+nim	getOpt	carne/bridge.html#getOpt,NimValue,string,NimValue	proc getOpt(v: NimValue; key: string; default: NimValue): NimValue		928
+nim	strField	carne/bridge.html#strField,JSContextRef,NimValue,string,string,ptr.JSValueRef,string	proc strField(ctx: JSContextRef; v: NimValue; key, name: string;\n         exception: ptr JSValueRef; val: var string): bool		935
+nim	numField	carne/bridge.html#numField,JSContextRef,NimValue,string,string,ptr.JSValueRef,float	proc numField(ctx: JSContextRef; v: NimValue; key, name: string;\n         exception: ptr JSValueRef; val: var float): bool		953
+nim	boolField	carne/bridge.html#boolField,JSContextRef,NimValue,string,string,ptr.JSValueRef,bool	proc boolField(ctx: JSContextRef; v: NimValue; key, name: string;\n          exception: ptr JSValueRef; val: var bool): bool		975
+nim	toJsonNode	carne/bridge.html#toJsonNode,NimValue	proc toJsonNode(v: NimValue): JsonNode		993
+nim	fromJsonNode	carne/bridge.html#fromJsonNode,JsonNode	proc fromJsonNode(n: JsonNode): NimValue		1023
+nim	readBytesParam	carne/bridge.html#readBytesParam,JSContextRef,JSValueRef,string,string,string,ptr.JSValueRef,string	proc readBytesParam(ctx: JSContextRef; v: JSValueRef; fname, pname, docBlock: string;\n               exception: ptr JSValueRef; dst: var string): bool		1046
+nim	sanitizeUTF8	carne/bridge.html#sanitizeUTF8,string	proc sanitizeUTF8(s: string): string		1127
+nim	strArg	carne/bridge.html#strArg,JSContextRef,ptr.UncheckedArray[JSValueRef],int,string,ptr.JSValueRef,string	proc strArg(ctx: JSContextRef; args: ptr UncheckedArray[JSValueRef]; i: int;\n       name: string; exception: ptr JSValueRef; val: var string): bool		1182
+nim	numArg	carne/bridge.html#numArg,JSContextRef,ptr.UncheckedArray[JSValueRef],int,string,ptr.JSValueRef,float	proc numArg(ctx: JSContextRef; args: ptr UncheckedArray[JSValueRef]; i: int;\n       name: string; exception: ptr JSValueRef; val: var float): bool		1197
+nim	boolArg	carne/bridge.html#boolArg,JSContextRef,ptr.UncheckedArray[JSValueRef],int,string,ptr.JSValueRef,bool	proc boolArg(ctx: JSContextRef; args: ptr UncheckedArray[JSValueRef]; i: int;\n        name: string; exception: ptr JSValueRef; val: var bool): bool		1212
+nim	stringParam	carne/bridge.html#stringParam,JSContextRef,NimValue,string,string,string,ptr.JSValueRef,string	proc stringParam(ctx: JSContextRef; v: NimValue; fname, pname, docBlock: string;\n            exception: ptr JSValueRef; val: var string): bool		1226
+nim	intParam	carne/bridge.html#intParam,JSContextRef,NimValue,string,string,string,ptr.JSValueRef,int64	proc intParam(ctx: JSContextRef; v: NimValue; fname, pname, docBlock: string;\n         exception: ptr JSValueRef; val: var int64): bool		1239
+nim	floatParam	carne/bridge.html#floatParam,JSContextRef,NimValue,string,string,string,ptr.JSValueRef,float	proc floatParam(ctx: JSContextRef; v: NimValue; fname, pname, docBlock: string;\n           exception: ptr JSValueRef; val: var float): bool		1252
+nim	boolParam	carne/bridge.html#boolParam,JSContextRef,NimValue,string,string,string,ptr.JSValueRef,bool	proc boolParam(ctx: JSContextRef; v: NimValue; fname, pname, docBlock: string;\n          exception: ptr JSValueRef; val: var bool): bool		1265
+nim	exportObject	carne/bridge.html#exportObject.t,untyped	template exportObject(body: untyped): untyped		1278
+nim	buildCallbackFn	carne/bridge.html#buildCallbackFn,string,string,NimNode,seq[ParamSpec]	proc buildCallbackFn(fname: string; ctxName: string; fnBody: NimNode;\n                params: seq[ParamSpec]): NimNode		1546
+nim	registerFn	carne/bridge.html#registerFn.m,untyped,untyped,untyped	macro registerFn(ctx: untyped; header: untyped; fnBody: untyped): untyped		1703
+nim	init	carne/bridge.html#init.m,untyped	macro init(def: untyped): untyped		1737
+nimgrp	tojs	carne/bridge.html#toJS-procs-all	proc		131
+nimgrp	proptojs	carne/bridge.html#propToJS-procs-all	proc		572

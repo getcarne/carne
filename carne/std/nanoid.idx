@@ -1,0 +1,2 @@
+nimTitle	nanoid	carne/std/nanoid.html	module carne/std/nanoid		0
+nim	install	carne/std/nanoid.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		19

@@ -1,0 +1,2 @@
+nimTitle	sql	carne/std/sql.html	module carne/std/sql		0
+nim	install	carne/std/sql.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		228

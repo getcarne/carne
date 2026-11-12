@@ -1,0 +1,2 @@
+nimTitle	css	carne/std/css.html	module carne/std/css		0
+nim	install	carne/std/css.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		605

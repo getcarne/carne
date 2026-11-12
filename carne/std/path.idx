@@ -1,0 +1,2 @@
+nimTitle	path	carne/std/path.html	module carne/std/path		0
+nim	install	carne/std/path.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		102

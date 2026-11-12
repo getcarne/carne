@@ -1,0 +1,2 @@
+nimTitle	mimetype	carne/std/mimetype.html	module carne/std/mimetype		0
+nim	install	carne/std/mimetype.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		27

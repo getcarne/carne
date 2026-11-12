@@ -1,0 +1,4 @@
+nimTitle	loader	carne/pkg/loader.html	module carne/pkg/loader		0
+nim	loadJsFile	carne/pkg/loader.html#loadJsFile,JSContextRef,Runtime,string,string,ptr.JSValueRef	proc loadJsFile(ctx: JSContextRef; rt: Runtime; spec, path: string;\n           exception: ptr JSValueRef): JSValueRef		57
+nim	initPkgLoader	carne/pkg/loader.html#initPkgLoader,DatpkgrConfig	proc initPkgLoader(cfg: DatpkgrConfig)		188
+nim	initPkgLoaderLazy	carne/pkg/loader.html#initPkgLoaderLazy	proc initPkgLoaderLazy()		193

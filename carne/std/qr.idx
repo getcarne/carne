@@ -1,0 +1,2 @@
+nimTitle	qr	carne/std/qr.html	module carne/std/qr		0
+nim	install	carne/std/qr.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		50

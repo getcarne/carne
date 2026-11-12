@@ -1,0 +1,10 @@
+nimTitle	modules	carne/modules.html	module carne/modules		0
+nim	Installer	carne/modules.html#Installer	type Installer		22
+nim	PkgRequireHook	carne/modules.html#PkgRequireHook	type PkgRequireHook		23
+nim	StdRequireHook	carne/modules.html#StdRequireHook	type StdRequireHook		25
+nim	pkgRequireHook	carne/modules.html#pkgRequireHook_2	var pkgRequireHook		30
+nim	stdRequireHook	carne/modules.html#stdRequireHook_2	var stdRequireHook		34
+nim	onTeardown	carne/modules.html#onTeardown	var onTeardown		38
+nim	registerStd	carne/modules.html#registerStd,string,Installer	proc registerStd(name: string; installer: Installer)		48
+nim	registeredStdNames	carne/modules.html#registeredStdNames	proc registeredStdNames(): seq[string]		53
+nim	installRequire	carne/modules.html#installRequire,Runtime,ptr.JSValueRef	proc installRequire(rt: Runtime; setupEx: ptr JSValueRef)		93

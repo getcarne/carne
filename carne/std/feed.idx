@@ -1,0 +1,2 @@
+nimTitle	feed	carne/std/feed.html	module carne/std/feed		0
+nim	install	carne/std/feed.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		579

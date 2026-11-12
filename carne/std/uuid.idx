@@ -1,0 +1,2 @@
+nimTitle	uuid	carne/std/uuid.html	module carne/std/uuid		0
+nim	install	carne/std/uuid.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		36

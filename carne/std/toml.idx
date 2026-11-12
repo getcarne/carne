@@ -1,0 +1,2 @@
+nimTitle	toml	carne/std/toml.html	module carne/std/toml		0
+nim	install	carne/std/toml.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		146

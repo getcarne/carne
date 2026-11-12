@@ -1,0 +1,2 @@
+nimTitle	vcard	carne/std/vcard.html	module carne/std/vcard		0
+nim	install	carne/std/vcard.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		800

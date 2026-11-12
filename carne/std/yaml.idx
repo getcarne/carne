@@ -1,0 +1,2 @@
+nimTitle	yaml	carne/std/yaml.html	module carne/std/yaml		0
+nim	install	carne/std/yaml.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		163

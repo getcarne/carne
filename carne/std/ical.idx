@@ -1,0 +1,2 @@
+nimTitle	ical	carne/std/ical.html	module carne/std/ical		0
+nim	install	carne/std/ical.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		1013

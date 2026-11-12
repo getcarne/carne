@@ -1,0 +1,2 @@
+nimTitle	bson	carne/std/bson.html	module carne/std/bson		0
+nim	install	carne/std/bson.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		42

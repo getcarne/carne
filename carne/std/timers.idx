@@ -1,0 +1,2 @@
+nimTitle	timers	carne/std/timers.html	module carne/std/timers		0
+nim	installTimers	carne/std/timers.html#installTimers,Runtime,ptr.JSValueRef	proc installTimers(rt: Runtime; setupEx: ptr JSValueRef)		139

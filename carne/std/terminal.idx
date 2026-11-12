@@ -1,0 +1,2 @@
+nimTitle	terminal	carne/std/terminal.html	module carne/std/terminal		0
+nim	install	carne/std/terminal.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		268

@@ -1,0 +1,2 @@
+nimTitle	svg	carne/std/svg.html	module carne/std/svg		0
+nim	install	carne/std/svg.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		185

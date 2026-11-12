@@ -1,0 +1,36 @@
+nimTitle	cli	carne/cli.html	module carne/cli		0
+nim	nimbleVersionStr	carne/cli.html#nimbleVersionStr,string	proc nimbleVersionStr(spec: string): string		7
+nim	versionStr	carne/cli.html#versionStr	const versionStr		26
+nim	Span	carne/cli.html#Span	tuple Span		42
+nim	useColor	carne/cli.html#useColor	proc useColor(): bool		46
+nim	paint	carne/cli.html#paint,string,string	proc paint(s, code: string): string		53
+nim	label	carne/cli.html#label,string	proc label(s: string): string		59
+nim	grey	carne/cli.html#grey,string	proc grey(s: string): string		62
+nim	cmdHelp	carne/cli.html#cmdHelp,string,string	proc cmdHelp(cmd, comment: string)		65
+nim	flagHelp	carne/cli.html#flagHelp,string,string	proc flagHelp(flag, comment: string)		72
+nim	span	carne/cli.html#span,string,string	proc span(text: string; code = ""): Span		79
+nim	spansToStr	carne/cli.html#spansToStr,openArray[Span]	proc spansToStr(xs: openArray[Span]): string		83
+nim	spinnerActive	carne/cli.html#spinnerActive	proc spinnerActive(): bool		97
+nim	isTty	carne/cli.html#isTty	proc isTty(): bool		101
+nim	printBanner	carne/cli.html#printBanner	proc printBanner()		114
+nim	display	carne/cli.html#display,varargs[Span]	proc display(xs: varargs[Span])		125
+nim	displayError	carne/cli.html#displayError,string	proc displayError(x: string)		130
+nim	displayError	carne/cli.html#displayError,varargs[Span]	proc displayError(xs: varargs[Span])		135
+nim	displayWarning	carne/cli.html#displayWarning,string	proc displayWarning(x: string)		140
+nim	displayWarning	carne/cli.html#displayWarning,varargs[Span]	proc displayWarning(xs: varargs[Span])		145
+nim	displayInfo	carne/cli.html#displayInfo,string	proc displayInfo(x: string)		150
+nim	displayInfo	carne/cli.html#displayInfo,varargs[Span]	proc displayInfo(xs: varargs[Span])		155
+nim	displaySuccess	carne/cli.html#displaySuccess,string	proc displaySuccess(x: string)		160
+nim	displaySuccess	carne/cli.html#displaySuccess,varargs[Span]	proc displaySuccess(xs: varargs[Span])		165
+nim	Spinner	carne/cli.html#Spinner	object Spinner		189
+nim	startSpinner	carne/cli.html#startSpinner,string	proc startSpinner(msg: string): Spinner		193
+nim	stopSpinner	carne/cli.html#stopSpinner,Spinner	proc stopSpinner(s: var Spinner)		206
+nim	withSpinner	carne/cli.html#withSpinner.t,string,untyped	template withSpinner(msg: string; body: untyped): untyped		216
+nim	confirm	carne/cli.html#confirm,string	proc confirm(question: string): bool		226
+nim	findTestFiles	carne/cli.html#findTestFiles,string	proc findTestFiles(root = "tests"): seq[string]		238
+nim	resolveTestArg	carne/cli.html#resolveTestArg,string,string	proc resolveTestArg(arg: string; root = "tests"): string		249
+nim	printHelp	carne/cli.html#printHelp	proc printHelp()		269
+nimgrp	displaywarning	carne/cli.html#displayWarning-procs-all	proc		140
+nimgrp	displayinfo	carne/cli.html#displayInfo-procs-all	proc		150
+nimgrp	displaysuccess	carne/cli.html#displaySuccess-procs-all	proc		160
+nimgrp	displayerror	carne/cli.html#displayError-procs-all	proc		130

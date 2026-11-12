@@ -1,0 +1,26 @@
+nimTitle	publish	carne/pkg/publish.html	module carne/pkg/publish		0
+nim	publishUpstream	carne/pkg/publish.html#publishUpstream	const publishUpstream		30
+nim	publishUpstreamUrl	carne/pkg/publish.html#publishUpstreamUrl	const publishUpstreamUrl		31
+nim	publishApiBase	carne/pkg/publish.html#publishApiBase	const publishApiBase		32
+nim	publishApiRoot	carne/pkg/publish.html#publishApiRoot	const publishApiRoot		33
+nim	publishDefaultBranch	carne/pkg/publish.html#publishDefaultBranch	const publishDefaultBranch		34
+nim	publishTokensFile	carne/pkg/publish.html#publishTokensFile	const publishTokensFile		35
+nim	PublishOpts	carne/pkg/publish.html#PublishOpts	tuple PublishOpts		37
+nim	tokensFilePath	carne/pkg/publish.html#tokensFilePath,string	proc tokensFilePath(home = ""): string		40
+nim	readPublishToken	carne/pkg/publish.html#readPublishToken,string	proc readPublishToken(path = ""): string		47
+nim	tokensFileExposed	carne/pkg/publish.html#tokensFileExposed,string	proc tokensFileExposed(path: string): bool		62
+nim	splitPublishTags	carne/pkg/publish.html#splitPublishTags,string	proc splitPublishTags(s: string): seq[string]		71
+nim	normalizeRepoUrl	carne/pkg/publish.html#normalizeRepoUrl,string	proc normalizeRepoUrl(url: string): string		80
+nim	expandPublishForgeAlias	carne/pkg/publish.html#expandPublishForgeAlias,string	proc expandPublishForgeAlias(s: string): string		126
+nim	isPublishForgeAliasShape	carne/pkg/publish.html#isPublishForgeAliasShape,string	proc isPublishForgeAliasShape(s: string): bool		131
+nim	resolveRepoUrl	carne/pkg/publish.html#resolveRepoUrl,string	proc resolveRepoUrl(input: string): string		136
+nim	publishEntry	carne/pkg/publish.html#publishEntry,string,string,string,string,string,seq[string]	proc publishEntry(name, url, description, license, web: string; tags: seq[string]): JsonNode		146
+nim	entryExists	carne/pkg/publish.html#entryExists,JsonNode,string	proc entryExists(packagesJson: JsonNode; name: string): bool		162
+nim	insertEntrySorted	carne/pkg/publish.html#insertEntrySorted,JsonNode,JsonNode	proc insertEntrySorted(packagesJson: JsonNode; entry: JsonNode)		172
+nim	manifestKeywords	carne/pkg/publish.html#manifestKeywords,JsonNode	proc manifestKeywords(extra: JsonNode): seq[string]		186
+nim	manifestHomepage	carne/pkg/publish.html#manifestHomepage,JsonNode	proc manifestHomepage(extra: JsonNode): string		202
+nim	detectRepoUrl	carne/pkg/publish.html#detectRepoUrl,string	proc detectRepoUrl(dir: string): string		211
+nim	gitHubUser	carne/pkg/publish.html#gitHubUser,string	proc gitHubUser(token: string): string		235
+nim	ensureFork	carne/pkg/publish.html#ensureFork,string,string	proc ensureFork(user, token: string): bool		260
+nim	createPullRequest	carne/pkg/publish.html#createPullRequest,string,string,string,string,string	proc createPullRequest(token, user, branch, title, body: string): string		285
+nim	publishCommand	carne/pkg/publish.html#publishCommand,string,PublishOpts,string	proc publishCommand(dir: string; opts: PublishOpts; home = ""): int		309

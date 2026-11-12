@@ -1,0 +1,16 @@
+nimTitle	upgrade	carne/pkg/upgrade.html	module carne/pkg/upgrade		0
+nim	upgradeRepo	carne/pkg/upgrade.html#upgradeRepo	const upgradeRepo		26
+nim	upgradeApiBase	carne/pkg/upgrade.html#upgradeApiBase	const upgradeApiBase		28
+nim	UpgradeError	carne/pkg/upgrade.html#UpgradeError	object UpgradeError		33
+nim	normalizeTag	carne/pkg/upgrade.html#normalizeTag,string	proc normalizeTag(v: string): string		36
+nim	stripTagV	carne/pkg/upgrade.html#stripTagV,string	proc stripTagV(tag: string): string		44
+nim	upgradeAsset	carne/pkg/upgrade.html#upgradeAsset	proc upgradeAsset(): tuple[name, ext: string]		52
+nim	latestDownloadUrl	carne/pkg/upgrade.html#latestDownloadUrl,string	proc latestDownloadUrl(asset: string): string		69
+nim	taggedDownloadUrl	carne/pkg/upgrade.html#taggedDownloadUrl,string,string	proc taggedDownloadUrl(tag, asset: string): string		74
+nim	parseTagName	carne/pkg/upgrade.html#parseTagName,string	proc parseTagName(apiBody: string): string		79
+nim	latestTag	carne/pkg/upgrade.html#latestTag	proc latestTag(): string		91
+nim	downloadFile	carne/pkg/upgrade.html#downloadFile,string,string	proc downloadFile(url, dest: string): bool		102
+nim	extractTarball	carne/pkg/upgrade.html#extractTarball,string,string	proc extractTarball(workDir, archive: string): bool		111
+nim	findReleaseBinary	carne/pkg/upgrade.html#findReleaseBinary,string	proc findReleaseBinary(dir: string): string		120
+nim	installBinary	carne/pkg/upgrade.html#installBinary,string,string,string	proc installBinary(extracted, target, currentVersion: string): bool		127
+nim	upgradeCommand	carne/pkg/upgrade.html#upgradeCommand,string,string	proc upgradeCommand(versionArg: string; home = ""; dryRun = false): int		148

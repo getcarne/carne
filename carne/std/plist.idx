@@ -1,0 +1,2 @@
+nimTitle	plist	carne/std/plist.html	module carne/std/plist		0
+nim	install	carne/std/plist.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		17

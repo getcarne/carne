@@ -1,0 +1,8 @@
+nimTitle	httpworkers	carne/std/httpworkers.html	module carne/std/httpworkers		0
+nim	WorkerBoot	carne/std/httpworkers.html#WorkerBoot	type WorkerBoot		30
+nim	makeBoot	carne/std/httpworkers.html#makeBoot,string,string,string,string,seq[string],int,cint,bool	proc makeBoot(source, sourceURL, baseDir, host: string; argv: seq[string]; port: int;\n         listenFd: cint; hasFd: bool): WorkerBoot		105
+nim	spawnWorker	carne/std/httpworkers.html#spawnWorker,WorkerBoot,int	proc spawnWorker(boot: WorkerBoot; port: int)		123
+nim	recordPipe	carne/std/httpworkers.html#recordPipe,int,cint	proc recordPipe(port: int; writeFd: cint): bool		140
+nim	markClosed	carne/std/httpworkers.html#markClosed,int	proc markClosed(port: int): seq[cint]		153
+nim	stopAllWorkers	carne/std/httpworkers.html#stopAllWorkers	proc stopAllWorkers()		161
+nim	readWorkerAdoptFd	carne/std/httpworkers.html#readWorkerAdoptFd	proc readWorkerAdoptFd(): tuple[fd: cint, has: bool]		191

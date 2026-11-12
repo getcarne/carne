@@ -1,0 +1,3 @@
+nimTitle	tcp	carne/std/tcp.html	module carne/std/tcp		0
+nim	closeAllTcp	carne/std/tcp.html#closeAllTcp	proc closeAllTcp()		519
+nim	install	carne/std/tcp.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		579

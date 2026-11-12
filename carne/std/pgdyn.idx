@@ -1,0 +1,22 @@
+nimTitle	pgdyn	carne/std/pgdyn.html	module carne/std/pgdyn		0
+nim	PPGconn	carne/std/pgdyn.html#PPGconn	type PPGconn		18
+nim	PPGresult	carne/std/pgdyn.html#PPGresult	type PPGresult		19
+nim	CONNECTION_OK	carne/std/pgdyn.html#CONNECTION_OK	const CONNECTION_OK		22
+nim	PGRES_COMMAND_OK	carne/std/pgdyn.html#PGRES_COMMAND_OK	const PGRES_COMMAND_OK		23
+nim	PGRES_TUPLES_OK	carne/std/pgdyn.html#PGRES_TUPLES_OK	const PGRES_TUPLES_OK		24
+nim	pqconnectdb	carne/std/pgdyn.html#pqconnectdb,cstring	proc pqconnectdb(conninfo: cstring): PPGconn		66
+nim	pqfinish	carne/std/pgdyn.html#pqfinish,PPGconn	proc pqfinish(conn: PPGconn)		70
+nim	pqstatus	carne/std/pgdyn.html#pqstatus,PPGconn	proc pqstatus(conn: PPGconn): cint		74
+nim	pqerrorMessage	carne/std/pgdyn.html#pqerrorMessage,PPGconn	proc pqerrorMessage(conn: PPGconn): cstring		78
+nim	pqexecParams	carne/std/pgdyn.html#pqexecParams,PPGconn,cstring,int32,pointer,cstringArray,ptr.int32,ptr.int32,int32	proc pqexecParams(conn: PPGconn; command: cstring; nParams: int32;\n             paramTypes: pointer; paramValues: cstringArray;\n             paramLengths, paramFormats: ptr int32; resultFormat: int32): PPGresult		82
+nim	pqresultStatus	carne/std/pgdyn.html#pqresultStatus,PPGresult	proc pqresultStatus(res: PPGresult): cint		92
+nim	pqresultErrorMessage	carne/std/pgdyn.html#pqresultErrorMessage,PPGresult	proc pqresultErrorMessage(res: PPGresult): cstring		96
+nim	pqntuples	carne/std/pgdyn.html#pqntuples,PPGresult	proc pqntuples(res: PPGresult): int32		101
+nim	pqnfields	carne/std/pgdyn.html#pqnfields,PPGresult	proc pqnfields(res: PPGresult): int32		105
+nim	pqfname	carne/std/pgdyn.html#pqfname,PPGresult,int32	proc pqfname(res: PPGresult; fieldNum: int32): cstring		109
+nim	pqftype	carne/std/pgdyn.html#pqftype,PPGresult,int32	proc pqftype(res: PPGresult; fieldNum: int32): int32		114
+nim	pqgetvalue	carne/std/pgdyn.html#pqgetvalue,PPGresult,int32,int32	proc pqgetvalue(res: PPGresult; tupNum, fieldNum: int32): cstring		118
+nim	pqgetlength	carne/std/pgdyn.html#pqgetlength,PPGresult,int32,int32	proc pqgetlength(res: PPGresult; tupNum, fieldNum: int32): int32		123
+nim	pqgetisnull	carne/std/pgdyn.html#pqgetisnull,PPGresult,int32,int32	proc pqgetisnull(res: PPGresult; tupNum, fieldNum: int32): int32		128
+nim	pqclear	carne/std/pgdyn.html#pqclear,PPGresult	proc pqclear(res: PPGresult)		133
+nim	pqcmdTuples	carne/std/pgdyn.html#pqcmdTuples,PPGresult	proc pqcmdTuples(res: PPGresult): cstring		137

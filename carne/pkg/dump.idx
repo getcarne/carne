@@ -1,0 +1,5 @@
+nimTitle	dump	carne/pkg/dump.html	module carne/pkg/dump		0
+nim	DumpError	carne/pkg/dump.html#DumpError	object DumpError		20
+nim	splitDumpRef	carne/pkg/dump.html#splitDumpRef,string	proc splitDumpRef(spec: string): tuple[name, refStr: string]		23
+nim	dumpManifest	carne/pkg/dump.html#dumpManifest,string,string,string	proc dumpManifest(dir, pkgSpec: string; home = ""; ensureSource = true): string		35
+nim	dumpCommand	carne/pkg/dump.html#dumpCommand,string,string,string	proc dumpCommand(dir, pkgSpec: string; home = ""; ensureSource = true): int		70

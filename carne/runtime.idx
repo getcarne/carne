@@ -1,0 +1,7 @@
+nimTitle	runtime	carne/runtime.html	module carne/runtime		0
+nim	lockLog	carne/runtime.html#lockLog	proc lockLog()		31
+nim	unlockLog	carne/runtime.html#unlockLog	proc unlockLog()		41
+nim	runCodeEx	carne/runtime.html#runCodeEx,string,string,seq[string],string	proc runCodeEx(code: string; sourceURL = "script.js"; argv: seq[string] = @[];\n          baseDir = ""): tuple[output: string, code: int]		148
+nim	runCode	carne/runtime.html#runCode,string,string,seq[string]	proc runCode(code: string; sourceURL = "script.js"; argv: seq[string] = @[]): string		231
+nim	runFileEx	carne/runtime.html#runFileEx,string,seq[string]	proc runFileEx(path: string; extraArgs: seq[string] = @[]): tuple[output: string,\n    code: int]		237
+nim	runFile	carne/runtime.html#runFile,string,seq[string]	proc runFile(path: string; extraArgs: seq[string] = @[]): string		246

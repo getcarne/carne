@@ -1,0 +1,16 @@
+nimTitle	bump	carne/pkg/bump.html	module carne/pkg/bump		0
+nim	BumpError	carne/pkg/bump.html#BumpError	object BumpError		27
+nim	blMajor	carne/pkg/bump.html#blMajor	BumpLevel.blMajor		30
+nim	blMinor	carne/pkg/bump.html#blMinor	BumpLevel.blMinor		30
+nim	blPatch	carne/pkg/bump.html#blPatch	BumpLevel.blPatch		30
+nim	BumpLevel	carne/pkg/bump.html#BumpLevel	enum BumpLevel		30
+nim	depGroups	carne/pkg/bump.html#depGroups	const depGroups		33
+nim	parseBumpLevel	carne/pkg/bump.html#parseBumpLevel,string	proc parseBumpLevel(s: string): BumpLevel		37
+nim	bumpVersion	carne/pkg/bump.html#bumpVersion,Version,BumpLevel	proc bumpVersion(v: Version; level: BumpLevel): Version		47
+nim	splitSpecPrefix	carne/pkg/bump.html#splitSpecPrefix,string	proc splitSpecPrefix(spec: string): tuple[prefix, core: string]		54
+nim	isBumpableSpec	carne/pkg/bump.html#isBumpableSpec,string	proc isBumpableSpec(spec: string): bool		63
+nim	bumpSpec	carne/pkg/bump.html#bumpSpec,string,BumpLevel	proc bumpSpec(spec: string; level: BumpLevel): string		120
+nim	setSpecVersion	carne/pkg/bump.html#setSpecVersion,string,Version	proc setSpecVersion(spec: string; v: Version): string		134
+nim	findValueSpan	carne/pkg/bump.html#findValueSpan,string,string,string,int,int,int,int,int	proc findValueSpan(content: string; key, expected: string; depth, lo, hi: int;\n              valStart, valEnd: var int): bool		212
+nim	findGroupSpan	carne/pkg/bump.html#findGroupSpan,string,string,int,int	proc findGroupSpan(content: string; group: string; glo, ghi: var int): bool		254
+nim	bumpCommand	carne/pkg/bump.html#bumpCommand,string,string,string,string	proc bumpCommand(dir, versionArg, levelStr, depName: string): int		419

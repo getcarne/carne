@@ -1,0 +1,2 @@
+nimTitle	crypto	carne/std/crypto.html	module carne/std/crypto		0
+nim	install	carne/std/crypto.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		744

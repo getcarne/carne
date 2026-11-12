@@ -1,0 +1,2 @@
+nimTitle	xml	carne/std/xml.html	module carne/std/xml		0
+nim	install	carne/std/xml.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		155

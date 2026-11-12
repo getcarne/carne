@@ -1,0 +1,3 @@
+nimTitle	watcher	carne/std/watcher.html	module carne/std/watcher		0
+nim	closeAllWatcher	carne/std/watcher.html#closeAllWatcher	proc closeAllWatcher()		163
+nim	install	carne/std/watcher.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		186

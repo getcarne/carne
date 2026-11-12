@@ -1,0 +1,13 @@
+nimTitle	init	carne/pkg/init.html	module carne/pkg/init		0
+nim	InitError	carne/pkg/init.html#InitError	object InitError		32
+nim	initDefaultVersion	carne/pkg/init.html#initDefaultVersion	const initDefaultVersion		36
+nim	initDefaultDescription	carne/pkg/init.html#initDefaultDescription	const initDefaultDescription		38
+nim	initDefaultLicense	carne/pkg/init.html#initDefaultLicense	const initDefaultLicense		40
+nim	initDefaultKeywords	carne/pkg/init.html#initDefaultKeywords	const initDefaultKeywords		42
+nim	initMain	carne/pkg/init.html#initMain	const initMain		44
+nim	gitAuthor	carne/pkg/init.html#gitAuthor	proc gitAuthor(): string		67
+nim	validPkgName	carne/pkg/init.html#validPkgName,string	proc validPkgName(name: string): bool		74
+nim	dirHasItems	carne/pkg/init.html#dirHasItems,string	proc dirHasItems(d: string): bool		83
+nim	buildPackageJson	carne/pkg/init.html#buildPackageJson,string,string,string,string,string,seq[string]	proc buildPackageJson(name, version, description, author, license: string;\n                 keywords: seq[string]; main = initMain): string		90
+nim	scaffoldPackage	carne/pkg/init.html#scaffoldPackage,string,string,string,string,string,string,seq[string]	proc scaffoldPackage(projectRoot, pkgName, version, description, author, license: string;\n                keywords: seq[string])		139
+nim	initCommand	carne/pkg/init.html#initCommand,string,string,bool	proc initCommand(dir, name: string; yesMode: bool): int		154

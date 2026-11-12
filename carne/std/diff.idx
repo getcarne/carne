@@ -1,0 +1,2 @@
+nimTitle	diff	carne/std/diff.html	module carne/std/diff		0
+nim	install	carne/std/diff.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		157

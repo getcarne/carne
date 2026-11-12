@@ -1,0 +1,3 @@
+nimTitle	ws	carne/std/ws.html	module carne/std/ws		0
+nim	closeAllWs	carne/std/ws.html#closeAllWs	proc closeAllWs()		767
+nim	install	carne/std/ws.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		822

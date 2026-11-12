@@ -1,0 +1,18 @@
+nimTitle	stdsync	carne/pkg/stdsync.html	module carne/pkg/stdsync		0
+nim	stdJsRepoBase	carne/pkg/stdsync.html#stdJsRepoBase	const stdJsRepoBase		29
+nim	stdJsPath	carne/pkg/stdsync.html#stdJsPath	const stdJsPath		32
+nim	stdManifestFile	carne/pkg/stdsync.html#stdManifestFile	const stdManifestFile		35
+nim	stdKnownJs	carne/pkg/stdsync.html#stdKnownJs	const stdKnownJs		37
+nim	StdFile	carne/pkg/stdsync.html#StdFile	tuple StdFile		42
+nim	StdManifest	carne/pkg/stdsync.html#StdManifest	object StdManifest		45
+nim	stdRoot	carne/pkg/stdsync.html#stdRoot	proc stdRoot(home = carneHome()): string		51
+nim	stdJsStore	carne/pkg/stdsync.html#stdJsStore	proc stdJsStore(home = carneHome()): string		55
+nim	stdManifestPath	carne/pkg/stdsync.html#stdManifestPath	proc stdManifestPath(home = carneHome()): string		59
+nim	parseStdManifest	carne/pkg/stdsync.html#parseStdManifest,string	proc parseStdManifest(src: string): StdManifest		63
+nim	readLocalManifest	carne/pkg/stdsync.html#readLocalManifest	proc readLocalManifest(home = carneHome()): tuple[found: bool, m: StdManifest]		90
+nim	isKnownJs	carne/pkg/stdsync.html#isKnownJs,string	proc isKnownJs(name: string; home = carneHome()): bool		99
+nim	fetchStdManifest	carne/pkg/stdsync.html#fetchStdManifest	proc fetchStdManifest(base = stdJsRepoBase): tuple[refUsed, src: string]		117
+nim	verifySha	carne/pkg/stdsync.html#verifySha,string,string	proc verifySha(content, wantHex: string): bool		132
+nim	stdSync	carne/pkg/stdsync.html#stdSync	proc stdSync(home = carneHome(); base = stdJsRepoBase): tuple[\n    version, refUsed: string, count: int, upToDate: bool]		136
+nim	stdStatus	carne/pkg/stdsync.html#stdStatus	proc stdStatus(home = carneHome()): tuple[found: bool, version, refUsed: string,\n    entries: seq[tuple[name, file: string, present: bool]]]		183
+nim	initStdDispatcher	carne/pkg/stdsync.html#initStdDispatcher	proc initStdDispatcher(home = carneHome())		214

@@ -1,0 +1,8 @@
+nimTitle	pkgmanifest	carne/pkg/pkgmanifest.html	module carne/pkg/pkgmanifest		0
+nim	PackageManifestError	carne/pkg/pkgmanifest.html#PackageManifestError	object PackageManifestError		40
+nim	pkgManifestFileName	carne/pkg/pkgmanifest.html#pkgManifestFileName	const pkgManifestFileName		42
+nim	validateName	carne/pkg/pkgmanifest.html#validateName,string,string	proc validateName(path, name: string)		58
+nim	parsePackageManifest	carne/pkg/pkgmanifest.html#parsePackageManifest,string,string	proc parsePackageManifest(content: string; path: string): Manifest		196
+nim	findPackageJson	carne/pkg/pkgmanifest.html#findPackageJson,string	proc findPackageJson(dir: string): string		224
+nim	manifestMain	carne/pkg/pkgmanifest.html#manifestMain,Manifest	proc manifestMain(m: Manifest): string		240
+nim	manifestExportsEntry	carne/pkg/pkgmanifest.html#manifestExportsEntry,Manifest	proc manifestExportsEntry(m: Manifest): string		251

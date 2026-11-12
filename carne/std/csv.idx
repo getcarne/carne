@@ -1,0 +1,2 @@
+nimTitle	csv	carne/std/csv.html	module carne/std/csv		0
+nim	install	carne/std/csv.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		28

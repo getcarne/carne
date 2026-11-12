@@ -1,0 +1,15 @@
+nimTitle	pkgman	carne/pkg/pkgman.html	module carne/pkg/pkgman		0
+nim	pkgRegistryUrl	carne/pkg/pkgman.html#pkgRegistryUrl	const pkgRegistryUrl		25
+nim	pkgDefaultSourceName	carne/pkg/pkgman.html#pkgDefaultSourceName	const pkgDefaultSourceName		29
+nim	carneHome	carne/pkg/pkgman.html#carneHome	proc carneHome(): string		32
+nim	carneBinDir	carne/pkg/pkgman.html#carneBinDir	proc carneBinDir(home = carneHome()): string		36
+nim	ensurePkgSource	carne/pkg/pkgman.html#ensurePkgSource,DatpkgrConfig	proc ensurePkgSource(cfg: DatpkgrConfig)		62
+nim	newCarnePkgConfig	carne/pkg/pkgman.html#newCarnePkgConfig,string	proc newCarnePkgConfig(rootPath = ""; debug = false; ensureSource = true): DatpkgrConfig		99
+nim	pkgInstall	carne/pkg/pkgman.html#pkgInstall,DatpkgrConfig,string,string	proc pkgInstall(cfg: DatpkgrConfig; spec: string; url = ""; verbose = true): bool		127
+nim	pkgRemove	carne/pkg/pkgman.html#pkgRemove,DatpkgrConfig,string,string	proc pkgRemove(cfg: DatpkgrConfig; name: string; version = ""): bool		162
+nim	pkgUpdate	carne/pkg/pkgman.html#pkgUpdate,DatpkgrConfig,string	proc pkgUpdate(cfg: DatpkgrConfig; name = ""; verbose = true): bool		168
+nim	pkgDevelop	carne/pkg/pkgman.html#pkgDevelop,DatpkgrConfig,string	proc pkgDevelop(cfg: DatpkgrConfig; dir: string): bool		176
+nim	pkgPrune	carne/pkg/pkgman.html#pkgPrune,DatpkgrConfig	proc pkgPrune(cfg: DatpkgrConfig)		181
+nim	pkgList	carne/pkg/pkgman.html#pkgList,DatpkgrConfig	proc pkgList(cfg: DatpkgrConfig)		185
+nim	packageEntryPoint	carne/pkg/pkgman.html#packageEntryPoint,DatpkgrConfig,string,string	proc packageEntryPoint(cfg: DatpkgrConfig; root, name: string): string		216
+nim	resolvePkgImport	carne/pkg/pkgman.html#resolvePkgImport,DatpkgrConfig,string,string	proc resolvePkgImport(cfg: DatpkgrConfig; spec: string; preferRef = ""): Option[\n    string]		244

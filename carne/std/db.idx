@@ -1,0 +1,3 @@
+nimTitle	db	carne/std/db.html	module carne/std/db		0
+nim	closeAllDb	carne/std/db.html#closeAllDb	proc closeAllDb()		578
+nim	installDriver	carne/std/db.html#installDriver,JSContextRef,Runtime	proc installDriver(ctx: JSContextRef; rt: Runtime): JSObjectRef		898
