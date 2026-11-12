@@ -26,3 +26,7 @@ console.log("email: " + cards[0].emails[0].value +
   " [" + cards[0].emails[0].types.join(", ") + "]");
 console.log("org: " + cards[0].org.name);
 console.log("second phone count: " + cards[1].tels.length);
+
+const out = vcard.stringify(cards);
+console.log("stringify has VCARD: " + out.includes("BEGIN:VCARD"));
+console.log("re-parse fn: " + vcard.parse(out)[0].fn);

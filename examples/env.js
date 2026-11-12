@@ -13,6 +13,8 @@ const parsed = env.parse([
 
 console.log("parsed GREETING: " + parsed.GREETING);
 console.log("parsed RAW: " + parsed.RAW);
+console.log("stringify: " + JSON.stringify(env.stringify({A: "1", B: "x y"})));
+console.log("roundtrip B: " + env.parse(env.stringify({B: "x y"})).B);
 
 const tmp = "/tmp/carne_dotenv_demo";
 os.writeFile(tmp, "CARNE_DEMO_LOADED=it-works\n");

@@ -27,3 +27,6 @@ const atom = feed.parseAtom(
 
 console.log("atom: " + atom.title.value + " by " + atom.authors[0].name);
 console.log("entry link: " + atom.entries[0].links[0].href);
+
+console.log("rss roundtrip: " + feed.parseRss(feed.stringifyRss(rss)).title);
+console.log("atom roundtrip: " + feed.parseAtom(feed.stringifyAtom(atom)).id);

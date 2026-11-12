@@ -30,3 +30,8 @@ for (const p of css.validate(bad))
   console.log("problem: " + p.property + " = " + p.value + " -> " +
     p.errors[0].message);
 console.log("clean: " + JSON.stringify(css.validate("a { margin: 0; }")));
+
+// Serialization roundtrip through the AST.
+const cssOut = css.stringify(sheet);
+console.log("stringify has rule: " + cssOut.includes(".card"));
+console.log("re-parse rules: " + css.parse(cssOut).rules.length);

@@ -32,3 +32,10 @@ console.log("ddl: " + table.kind + " " + table.children[0].value +
   " (" + (table.children.length - 1) + " columns)");
 console.log("first column: " +
   table.children[1].children[0].value + " " + table.children[1].children[1].value);
+
+// AST back to SQL, plus normalized formatting.
+const ast = sql.sqlite.parse("select a from t where a = 1");
+console.log("stringify: " + sql.sqlite.stringify(ast));
+console.log("format: " + sql.sqlite.format("select a from t where a = 1"));
+console.log("format upper: " +
+  sql.sqlite.format("select a from t", {upperCase: true}));
