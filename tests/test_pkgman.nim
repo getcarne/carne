@@ -36,6 +36,41 @@ test "config roots at override and registers source":
       found = true
   check found
 
+test "ensurePkgSource heals a stale registry URL":
+  let home = freshHome()
+  defer: removeDir(home)
+  let seed = newCarnePkgConfig(rootPath = home, ensureSource = false)
+  seed.saveSources(@[Source(name: "carne",
+    url: "https://raw.githubusercontent.com/carne/pkgs/main/packages.json")])
+  discard newCarnePkgConfig(rootPath = home)
+  let cfg = newCarnePkgConfig(rootPath = home)
+  var urls: seq[string] = @[]
+  for src in cfg.loadSources():
+    if src.name == "carne":
+      urls.add(src.url)
+  check urls == @[pkgRegistryUrl]
+
+test "ensurePkgSource keeps custom sources while healing":
+  let home = freshHome()
+  defer: removeDir(home)
+  let seed = newCarnePkgConfig(rootPath = home, ensureSource = false)
+  seed.saveSources(@[
+    Source(name: "carne",
+      url: "https://raw.githubusercontent.com/openpeeps/carnepkgs/main/packages.json"),
+    Source(name: "mirror", url: "https://example.com/mirror.json"),
+  ])
+  discard newCarnePkgConfig(rootPath = home)
+  let cfg = newCarnePkgConfig(rootPath = home)
+  var carneUrls: seq[string] = @[]
+  var mirrorKept = false
+  for src in cfg.loadSources():
+    if src.name == "carne":
+      carneUrls.add(src.url)
+    if src.name == "mirror" and src.url == "https://example.com/mirror.json":
+      mirrorKept = true
+  check carneUrls == @[pkgRegistryUrl]
+  check mirrorKept
+
 test "pkg list on empty home does not raise":
   let home = freshHome()
   defer: removeDir(home)

@@ -60,15 +60,20 @@ proc carneLogCb(level: LogLevel, msg: string) {.gcsafe.} =
     displayError(msg)
 
 proc ensurePkgSource*(cfg: DatpkgrConfig) =
-  ## Make sure the carne registry source is registered. Fresh homes get
-  ## it from datpkgr's own defaults; homes created before the registry
-  ## existed carry a sourceless sources.json that `ensureSourcesFile`
-  ## never upgrades (it only writes when missing), so add it here.
+  ## Make sure the carne registry source is registered at the current
+  ## default URL. Fresh homes get it from datpkgr's own defaults; homes
+  ## created before the registry existed carry a sourceless sources.json
+  ## that `ensureSourcesFile` never upgrades (it only writes when
+  ## missing), so add it here. Homes created between registry moves
+  ## carry a stale URL (openpeeps/carnepkgs, carne/pkgs, ...) that 404s
+  ## on refresh, so heal those to the default too - the `carne`-named
+  ## source is owned by the binary, custom mirrors live under their own
+  ## names and pass through untouched.
   ##
   ## NB: consult the raw file, not `loadSources` - its fallback fabricates
   ## a usable-looking entry named `defaultSourceName` when the file yields
   ## nothing, which is indistinguishable from a registered source.
-  var present = false
+  var storedUrl = ""
   try:
     let content = readFile(cfg.rootPath / cfg.sourcesPath())
     let j = parseJson(content)
@@ -80,21 +85,32 @@ proc ensurePkgSource*(cfg: DatpkgrConfig) =
         if item.kind == JObject and item.hasKey("name") and
             item["name"].getStr == cfg.defaultSourceName and
             item.hasKey("url") and item["url"].getStr.len > 0:
-          present = true
+          storedUrl = item["url"].getStr
           break
   except CatchableError:
     discard
-  if present:
+  if storedUrl == cfg.defaultRegistryUrl:
     return
-  # Drop sourceless entries on the way through (the pre-registry
-  # default has an empty URL and can never seed anything).
+  # Rebuild through loadSources: drop sourceless entries (the
+  # pre-registry default has an empty URL and can never seed anything)
+  # and collapse the default source to one entry at the current URL.
   var sources: seq[Source] = @[]
+  var healed = false
   for src in cfg.loadSources():
-    if src.url.len > 0 and src.name != cfg.defaultSourceName:
+    if src.name == cfg.defaultSourceName:
+      if healed or src.url != cfg.defaultRegistryUrl:
+        continue
+      healed = true
       sources.add(src)
-  sources.add(Source(name: cfg.defaultSourceName,
-    url: cfg.defaultRegistryUrl))
+    elif src.url.len > 0:
+      sources.add(src)
+  if not healed:
+    sources.add(Source(name: cfg.defaultSourceName,
+      url: cfg.defaultRegistryUrl))
   cfg.saveSources(sources)
+  if storedUrl.len > 0:
+    displayInfo("registry source `" & cfg.defaultSourceName &
+      "`: updated URL to " & cfg.defaultRegistryUrl)
 
 proc newCarnePkgConfig*(rootPath = "", debug = false,
     ensureSource = true): DatpkgrConfig =
