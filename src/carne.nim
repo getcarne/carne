@@ -16,6 +16,7 @@ when isMainModule:
   import ./carne/pkg/publish
   import ./carne/pkg/bump
   import ./carne/pkg/dump
+  import ./carne/pkg/upgrade
   import ./carne/pkg/loader
   import ./carne/pkg/stdsync
 
@@ -209,6 +210,15 @@ when isMainModule:
     let spec = if args.len == 1: args[0] else: ""
     dumpCommand(getCurrentDir(), spec)
 
+  proc runUpgrade(args: seq[string]; dryRun: bool): int =
+    ## `carne upgrade [version]`: self-update from GitHub releases
+    ## into ~/.carne/bin.
+    if args.len > 1:
+      displayError("usage: carne upgrade [version] [--dry-run]")
+      return 1
+    let v = if args.len == 1: args[0] else: ""
+    upgradeCommand(v, dryRun = dryRun)
+
   proc printStdHelp() =
     echo "usage: carne std <init|update|list>"
     echo ""
@@ -366,6 +376,9 @@ when isMainModule:
     of "dump":
       # print a package.json (cwd upward, or an installed package)
       return runDump(positionals)
+    of "upgrade":
+      # self-update from GitHub releases into ~/.carne/bin
+      return runUpgrade(positionals, pkgDryRun)
     of "test":
       # test runner over tests/**/*.test.js
       return runTestCommand(positionals)

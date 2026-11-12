@@ -33,6 +33,11 @@ proc carneHome*(): string =
   ## Package-manager home: `CARNE_HOME` or `~/.carne`.
   getEnv("CARNE_HOME", getHomeDir() / ".carne")
 
+proc carneBinDir*(home = carneHome()): string =
+  ## Self-install directory: `<home>/bin` holds the carne binary
+  ## (`carne upgrade` installs here, like `~/.clue/bin` for clue).
+  home / "bin"
+
 proc carneLogCb(level: LogLevel, msg: string) {.gcsafe.} =
   ## datpkgr log levels through the CLI display procs, so pkg output
   ## carries the same colors as the rest of the CLI (Info: cyan,

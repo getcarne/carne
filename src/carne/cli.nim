@@ -277,6 +277,7 @@ proc printHelp*() =
   echo ""
   echo label("Versioning")
   echo "  bump [semver] [--level=..] [--dep=..] " & grey("bump version in package.json (or a direct dep)")
+  echo "  upgrade [version]       " & grey("self-update carne from GitHub releases (into ~/.carne/bin)")
   echo ""
   echo label("Inspect")
   echo "  dump [pkg[@ref]]        " & grey("print package.json (cwd or an installed package)")
