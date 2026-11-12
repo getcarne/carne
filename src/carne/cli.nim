@@ -62,6 +62,20 @@ proc label*(s: string): string =
 proc grey*(s: string): string =
   paint(s, ansiGrey)
 
+proc cmdHelp*(cmd, comment: string) =
+  ## One command row for the usage screens: two-space indent, comment
+  ## column at 28. Adding a command is one line; flags hang off it via
+  ## flagHelp below.
+  let pad = max(0, 24 - cmd.len)
+  echo "  " & cmd & " ".repeat(pad) & "  " & grey(comment)
+
+proc flagHelp*(flag, comment: string) =
+  ## One flag row nested under a command: four-space indent, same
+  ## comment column as command rows, so flags read as part of the
+  ## command above them.
+  let pad = max(0, 22 - flag.len)
+  echo "    " & flag & " ".repeat(pad) & "  " & grey(comment)
+
 proc span*(text: string, code = ""): Span =
   ## Builds one display fragment (code "" for plain text).
   (text, code)
@@ -260,31 +274,45 @@ proc printHelp*() =
   echo ""
   echo "usage: carne <command> [args] [options]"
   echo ""
-  echo label("Scripting")
-  echo "  run <script.js> [args]  " & grey("run a .js file")
-  echo "  test [file] [...] [--isatty=true|false] " & grey("run tests/**/*.test.js (or the given file)")
+  echo label("Scripting:")
+  cmdHelp("run <script.js> [args]", "run a .js file")
+  cmdHelp("test [file] [...]", "run tests/**/*.test.js (or the given file)")
   echo ""
-  echo label("Standard library")
-  echo "  std init                " & grey("download JS stdlib (std/*) into ~/.carne/std")
-  echo "  std update              " & grey("refresh all JS stdlib files")
-  echo "  std list                " & grey("show installed JS stdlib version and files")
+  echo label("Standard library:")
+  cmdHelp("std init", "download JS stdlib (std/*) into ~/.carne/std")
+  cmdHelp("std update", "refresh all JS stdlib files")
+  cmdHelp("std list", "show installed JS stdlib version and files")
   echo ""
-  echo label("Packages")
-  echo "  pkg install <spec>      " & grey("install a package by name, git URL (--url=... pins a source URL)")
-  echo "  pkg remove <name> [ver] [--yes] " & grey("uninstall a package (one version, or all)")
-  echo "  pkg update [name]       " & grey("update one package, or all when omitted")
-  echo "  pkg list                " & grey("list installed packages")
-  echo "  pkg develop <path>      " & grey("editable install from a local directory")
-  echo "  pkg prune [--yes]       " & grey("remove orphaned packages")
-  echo "  pkg refresh             " & grey("re-download registry data")
-  echo "  pkg publish [opts]      " & grey("open a PR adding this package to the registry")
+  echo label("Packages:")
+  cmdHelp("pkg install <spec>",
+    "install a package by name, git URL, gh:user/repo alias, name#ref, or name + source URL")
+  flagHelp("--url:<url>", "pin a source URL")
+  cmdHelp("pkg remove <name> [ver]", "uninstall one version, or all")
+  flagHelp("--yes", "skip confirmation prompts")
+  cmdHelp("pkg update [name]", "update one package, or all")
+  cmdHelp("pkg list", "list installed packages")
+  cmdHelp("pkg develop [path]", "editable install from a local directory")
+  cmdHelp("pkg prune", "remove orphaned packages")
+  flagHelp("--yes", "skip confirmation prompts")
+  cmdHelp("pkg refresh", "re-download registry data")
+  cmdHelp("pkg publish", "open a PR adding this package to the registry")
+  flagHelp("--tags:<list>", "comma-separated tags")
+  flagHelp("--web:<url>", "package website URL")
+  flagHelp("--url:<url>", "pin a source URL")
+  flagHelp("--dry-run", "no network, git, or secret changes")
+  flagHelp("--yes", "skip confirmation prompts")
   echo ""
-  echo label("Versioning")
-  echo "  bump [semver] [--level=..] [--dep=..] " & grey("bump version in package.json (or a direct dep)")
-  echo "  upgrade [version]       " & grey("self-update carne from GitHub releases (into ~/.carne/bin)")
+  echo label("Versioning:")
+  cmdHelp("bump [semver]", "bump version in package.json (or a direct dep)")
+  flagHelp("--level:<level>", "major, minor, or patch")
+  flagHelp("--dep:<name>", "bump a direct dependency spec (prefix kept)")
+  cmdHelp("upgrade [version]", "self-update carne from GitHub releases (into ~/.carne/bin)")
+  flagHelp("--dry-run", "print resolved URLs only, no changes")
   echo ""
-  echo label("Inspect")
-  echo "  dump [pkg[@ref]]        " & grey("print package.json (cwd or an installed package)")
+  echo label("Inspect:")
+  cmdHelp("dump [pkg[@ref]]", "print package.json (cwd or an installed package)")
   echo ""
-  echo "  -h, --help              " & grey("show this help")
-  echo "  --version               " & grey("show version")
+  echo label("options:")
+  flagHelp("--isatty:<true|false>", "override TTY detection (default: auto-detect)")
+  cmdHelp("-h, --help", "show this help")
+  cmdHelp("--version", "show version")

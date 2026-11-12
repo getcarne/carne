@@ -35,16 +35,26 @@ when isMainModule:
       return 1
 
   proc printPkgHelp() =
-    echo "usage: carne pkg <install|remove|update|list|develop|prune|refresh|publish> [args]"
+    echo "usage: carne pkg <command> [args] [options]"
     echo ""
-    echo "  install <spec> [--url=...]  " & grey("registry name, git URL, gh:user/repo alias, name#ref, or name + source URL")
-    echo "  remove <name> [version] [--yes] " & grey("uninstall one version, or all versions")
-    echo "  update [name]               " & grey("update one package, or all")
-    echo "  list                        " & grey("list installed packages")
-    echo "  develop [path]              " & grey("editable install from a local directory (default: current dir)")
-    echo "  prune [--yes]               " & grey("remove orphaned packages")
-    echo "  refresh                     " & grey("re-download registry data")
-    echo "  publish [--tags=..] [--web=..] [--url=..] [--dry-run] [--yes] " & grey("open a PR adding this package to the registry")
+    cmdHelp("install <spec>",
+      "registry name, git URL, gh:user/repo alias, name#ref, or name + source URL")
+    flagHelp("--url:<url>", "pin a source URL")
+    cmdHelp("remove <name> [ver]", "uninstall one version, or all")
+    flagHelp("--yes", "skip confirmation prompts")
+    cmdHelp("update [name]", "update one package, or all")
+    cmdHelp("list", "list installed packages")
+    cmdHelp("develop [path]",
+      "editable install from a local directory (default: current dir)")
+    cmdHelp("prune", "remove orphaned packages")
+    flagHelp("--yes", "skip confirmation prompts")
+    cmdHelp("refresh", "re-download registry data")
+    cmdHelp("publish", "open a PR adding this package to the registry")
+    flagHelp("--tags:<list>", "comma-separated tags")
+    flagHelp("--web:<url>", "package website URL")
+    flagHelp("--url:<url>", "pin a source URL")
+    flagHelp("--dry-run", "no network, git, or secret changes")
+    flagHelp("--yes", "skip confirmation prompts")
 
   proc runPkg(args: seq[string], pkgUrl, pkgTags, pkgWeb: string,
       pkgDryRun, pkgYes: bool): int =
