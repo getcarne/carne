@@ -1,8 +1,8 @@
 # Carne CLI styling (mirrors dfkup's usage/cmd comment style).
-#
-# Colors are disabled under NO_COLOR or TERM=dumb.
 
-import std/[os, strutils, algorithm, atomics, terminal]
+import std/[os, strutils, algorithm, atomics, options, terminal]
+
+import ./bridge
 
 func nimbleVersionStr*(spec: string): string =
   ## First `version = "..."` assignment in a .nimble file (comments
@@ -44,7 +44,11 @@ type Span* = tuple[text: string, code: string]
   ## the termstyle dependency). code "" renders plain.
 
 proc useColor*(): bool =
-  getEnv("NO_COLOR") == "" and getEnv("TERM") != "dumb"
+  ## TTY-gated, unless the CLI --isatty flag says otherwise. No env
+  ## vars: color control lives at the CLI level.
+  if colorTtyOverride.isSome:
+    return colorTtyOverride.get
+  isatty(stdout)
 
 proc paint*(s, code: string): string =
   if useColor():
@@ -258,7 +262,7 @@ proc printHelp*() =
   echo ""
   echo label("Scripting")
   echo "  run <script.js> [args]  " & grey("run a .js file")
-  echo "  test [file] [...]       " & grey("run tests/**/*.test.js (or the given file)")
+  echo "  test [file] [...] [--isatty=true|false] " & grey("run tests/**/*.test.js (or the given file)")
   echo ""
   echo label("Standard library")
   echo "  std init                " & grey("download JS stdlib (std/*) into ~/.carne/std")

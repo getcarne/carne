@@ -63,6 +63,11 @@ type
 
 var rtThread {.threadvar.}: Runtime
 
+var colorTtyOverride*: Option[bool] = none(bool)
+  ## CLI --isatty override for TTY detection, honored by useColor
+  ## (cli.nim) and colorsOn (std/terminal). none = auto-detect from
+  ## the actual stdout. Set once at startup, read-only afterwards.
+
 proc currentRt*(): Runtime =
   ## The run currently executing on this thread. Set by runCode.
   rtThread

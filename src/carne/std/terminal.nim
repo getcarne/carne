@@ -5,7 +5,7 @@
 #   terminal.green("ok")        -> "ok" in green (plain when colors off)
 #   terminal.red/bold/...       -> same for red/yellow/blue/magenta/cyan,
 #                                  gray, bold, dim, underline
-#   terminal.colorEnabled()     -> bool (the NO_COLOR/TERM=dumb gate)
+#   terminal.colorEnabled()     -> bool
 #   terminal.stripAnsi(text)    -> string without CSI sequences
 #   terminal.write(text)        -> undefined (stdout, no newline)
 #   terminal.isTTY()            -> bool
@@ -15,12 +15,14 @@
 #   terminal.readPassword([prompt]) -> string | null (no echo, blocks)
 #   terminal.parseArgs([argv][, opts]) -> {_: [...], ...}
 #
-# Styling mirrors the CLI's own rule: colors die under NO_COLOR or
-# TERM=dumb. write/readLine/readPassword touch the real terminal and
-# block the loop like os.exec: fine in scripts, stalls servers.
+# Colors reach live terminals only, unless the CLI --isatty flag
+# says otherwise (see colorEnabled). write/readLine/readPassword
+# touch the real terminal and block the loop like os.exec: fine in
+# scripts, stalls servers.
 
 import std/os
 import std/strutils
+import std/options
 import std/tables
 import std/terminal
 
@@ -32,9 +34,12 @@ import ../runtime
 const ansiReset = "\e[0m"
 
 proc colorsOn(): bool =
-  ## The CLI's rule, verbatim: NO_COLOR set to anything non-empty (or
-  ## TERM=dumb) kills colors; unset/empty NO_COLOR keeps them.
-  getEnv("NO_COLOR") == "" and getEnv("TERM") != "dumb"
+  ## Colors only reach a live terminal, unless the CLI --isatty flag
+  ## says otherwise: the override wins, else stdout must be a TTY.
+  ## No env vars involved: color control lives at the CLI level.
+  if colorTtyOverride.isSome:
+    return colorTtyOverride.get
+  isatty(stdout)
 
 proc paint(code, text: string): string =
   ## Wraps text in one SGR code, or returns it untouched when colors
@@ -306,7 +311,8 @@ init proc(module: Module) =
 
     module.registerFn colorEnabled():
       ## terminal.colorEnabled() -> whether styling emits ANSI codes
-      ## (false under NO_COLOR or TERM=dumb, like the CLI itself)
+      ## (true under CLI --isatty:true, false under --isatty:false,
+      ## else true only when stdout is a TTY)
       toJS(ctx, colorsOn())
 
     module.registerFn stripAnsi(text: string):

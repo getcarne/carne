@@ -1,56 +1,55 @@
-import std/os
+import std/options
 import unittest
 
 import carne
 import carne/modules
+import carne/bridge
 import carne/std/terminal
 
 registerStd("std/terminal", terminal.install)
 
-proc withEnv(key, val: string; body: proc()) =
-  ## Runs body with an env override, restoring afterwards even on
-  ## failure (a leaked NO_COLOR would poison every later color test).
-  let had = existsEnv(key)
-  let old = getEnv(key)
-  putEnv(key, val)
+proc withOverride(v: bool; body: proc()) =
+  ## Runs body with the CLI --isatty override forced, restoring
+  ## afterwards even on failure.
+  let old = colorTtyOverride
+  colorTtyOverride = some(v)
   try:
     body()
   finally:
-    if had:
-      putEnv(key, old)
-    else:
-      delEnv(key)
+    colorTtyOverride = old
+
+const esc = "\u001b"
 
 test "colors wrap when enabled":
-  withEnv("TERM", "xterm"):
-    doAssert not existsEnv("NO_COLOR")
+  withOverride(true):
     check runCode("require('std/terminal').green('ok')") ==
-      "\u001b[32mok\u001b[0m"
+      esc & "[32mok" & esc & "[0m"
     check runCode("require('std/terminal').red('x')") ==
-      "\u001b[31mx\u001b[0m"
+      esc & "[31mx" & esc & "[0m"
     check runCode("require('std/terminal').bold('x')") ==
-      "\u001b[1mx\u001b[0m"
+      esc & "[1mx" & esc & "[0m"
     check runCode("require('std/terminal').colorEnabled()") == "true"
 
-test "colors die under NO_COLOR":
-  withEnv("NO_COLOR", "1"):
+test "colors die when disabled":
+  withOverride(false):
     check runCode("require('std/terminal').green('ok')") == "ok"
-    check runCode("require('std/terminal').colorEnabled()") == "false"
-
-test "colors die under TERM=dumb":
-  withEnv("TERM", "dumb"):
     check runCode("require('std/terminal').red('x')") == "x"
     check runCode("require('std/terminal').colorEnabled()") == "false"
 
+test "auto mode reports a bool":
+  colorTtyOverride = none(bool)
+  check runCode(
+    "['true','false'].indexOf(String(require('std/terminal').colorEnabled())) >= 0") ==
+    "true"
+
 test "stripAnsi removes codes":
-  withEnv("TERM", "xterm"):
+  withOverride(true):
     check runCode(
       "require('std/terminal').stripAnsi(require('std/terminal').red('x'))") ==
       "x"
     check runCode("require('std/terminal').stripAnsi('plain')") == "plain"
-    check runCode(
-      "require('std/terminal').stripAnsi('\u001b[1mA\u001b[0m \u001b[32mB\u001b[0m')") ==
-      "A B"
+    check runCode("require('std/terminal').stripAnsi('" & esc &
+      "[1mA" & esc & "[0m " & esc & "[32mB" & esc & "[0m')") == "A B"
 
 test "write and size read sane":
   check runCode("require('std/terminal').write('')") == ""

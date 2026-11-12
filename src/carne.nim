@@ -7,7 +7,7 @@ import ./carne/runtime
 export runtime
 
 when isMainModule:
-  import std/[algorithm, os, parseopt, strutils]
+  import std/[algorithm, options, os, parseopt, strutils]
 
   import ./carne/cli
   import ./carne/modules
@@ -295,6 +295,8 @@ when isMainModule:
     var bumpDep = ""
     var bumpPending = ""
     var bumpMissing = ""
+    var isattyFlag = ""
+    var hasIsatty = false
     var p = initOptParser(commandLineParams())
     for kind, key, val in p.getopt():
       case kind
@@ -339,6 +341,11 @@ when isMainModule:
             bumpDep = val
           else:
             bumpPending = "dep"
+        of "isatty":
+          # --isatty=true|false (bare --isatty means true): overrides
+          # TTY detection for this run's output, CLI and std/terminal.
+          hasIsatty = true
+          isattyFlag = val
         else:
           displayError("unknown option --" & key)
           printHelp()
@@ -348,6 +355,16 @@ when isMainModule:
     if bumpPending.len > 0:
       bumpMissing = bumpPending
       bumpPending = ""
+    if hasIsatty:
+      case isattyFlag
+      of "", "true":
+        colorTtyOverride = some(true)
+      of "false":
+        colorTtyOverride = some(false)
+      else:
+        displayError("option --isatty needs true or false")
+        printHelp()
+        return 1
     if showVersion:
       echo versionStr
       return 0
