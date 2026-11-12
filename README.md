@@ -82,6 +82,7 @@ Packages
 
 Versioning
   bump [semver] [--level=..] [--dep=..] bump version in package.json (or a direct dep)
+  upgrade [version]       self-update carne from GitHub releases (into ~/.carne/bin)
 
 Inspect
   dump [pkg[@ref]]        print package.json (cwd or an installed package)
@@ -122,6 +123,12 @@ and npm-style sources:
   `optionalDependencies`, `peerDependencies`), keeping the range
   prefix (`^0.1.0` patch-bumps to `^0.1.1`). Only the bumped value
   changes; formatting is preserved.
+- `carne upgrade [version]`: self-updates from
+  [getcarne/carne releases](https://github.com/getcarne/carne/releases)
+  into `~/.carne/bin` (created on first use; add it to `PATH`). Bare
+  takes the latest release, a version pins one (`0.1.3` or `v0.1.3`);
+  `--dry-run` prints the URL only. The previous binary is kept as
+  `carne.prev.<old>`.
 - `carne dump [pkg[@ref]]`: prints the raw `package.json` — the one
   found from the cwd upwards, or an installed package's (develop
   checkouts included).
@@ -164,9 +171,9 @@ The library covers OS and process access, data formats, text
 processing, crypto, networking, and developer tools:
 
 - `std/env` - process info and environment (args, getEnv, putEnv, delEnv, hasEnv, parse/load `.env`, cwd, exit)
-- `std/os` - synchronous OS utilities (files, dirs, sleep, exec)
+- `std/os` - synchronous OS utilities (files, dirs, exec)
 - `std/archive` - archive creation/extraction and compression (tar, zip, rar, gz, lz4, bz2, brotli)
-- Timers - `setTimeout`/`setInterval` globals, no require needed
+- Timers - `setTimeout`/`setInterval`/`sleep` globals, no require needed
 - `std/yaml` - YAML parsing and serialization
 - `std/toml` - TOML parsing and serialization
 - `std/ical` - iCalendar parsing and serialization

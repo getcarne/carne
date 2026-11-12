@@ -235,11 +235,6 @@ test "os cpuCount is at least one":
   check runCode(
     "Number.isInteger(require('std/os').cpuCount())") == "true"
 
-test "os sleep waits and rejects negatives":
-  check runCode("typeof require('std/os').sleep(5)") == "undefined"
-  expect CarneError:
-    discard runCode("require('std/os').sleep(-1)")
-
 test "os exec captures code and output":
   check runCode(
     "JSON.stringify(require('std/os').exec('echo hi').output.trim())") ==

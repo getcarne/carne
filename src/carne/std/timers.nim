@@ -3,11 +3,13 @@
 #   setTimeout(fn, ms, ...args)   -> numeric id
 #   setInterval(fn, ms, ...args)  -> numeric id
 #   clearTimeout(id) / clearInterval(id)
+#   sleep(ms)                     -> Promise<undefined> (non-blocking)
 #
 # Callbacks are protected from GC until they fire or are cleared.
 # Each live timer holds one pending-work slot; the run drains until
 # none remain. Timer throws are recorded as uncaught (exit 1 after
-# drain) without killing the remaining timers.
+# drain) without killing the remaining timers. sleep resolves on the
+# loop like any other timer, so awaiting it never blocks.
 
 import std/tables
 
@@ -106,6 +108,34 @@ registerFn(ctx, clearTimerCb(id ?: JSValueRef)):
         decPending(rt)
   JSValueMakeUndefined(ctx)
 
+registerFn(ctx, sleepCb(delay: float)):
+  ## sleep(ms) -> Promise<undefined> (non-blocking, loop-friendly)
+  var delayMs = int(delay)
+  if delay != delay or delayMs < 0:
+    delayMs = 0
+  let rt = currentRt()
+  var resolveFn, rejectFn: JSObjectRef
+  var mkEx: JSValueRef = nil
+  let promise =
+    JSObjectMakeDeferredPromise(ctx, addr resolveFn, addr rejectFn, addr mkEx)
+  if promise == nil or mkEx != nil:
+    throwError(ctx, "sleep: could not create promise", exception)
+    return nil
+  JSValueProtect(ctx, promise)
+  JSValueProtect(ctx, resolveFn)
+  JSValueProtect(ctx, rejectFn)
+  inc rt.pending
+  let c = ctx
+  discard rt.ensureLoop().addTimer(delayMs, proc(id: int) =
+    var e2: JSValueRef = nil
+    var arg = JSValueMakeUndefined(c)
+    discard JSObjectCallAsFunction(c, resolveFn, nil, 1, addr arg, addr e2)
+    JSValueUnprotect(c, promise)
+    JSValueUnprotect(c, resolveFn)
+    JSValueUnprotect(c, rejectFn)
+    decPending(rt))
+  promise
+
 proc installTimers*(rt: Runtime; setupEx: ptr JSValueRef) =
   ## Installs the timer globals.
   let global = JSContextGetGlobalObject(rt.ctx)
@@ -117,3 +147,5 @@ proc installTimers*(rt: Runtime; setupEx: ptr JSValueRef) =
     makeFunction(rt.ctx, "clearTimeout", clearTimerCb), setupEx)
   setProp(rt.ctx, global, "clearInterval",
     makeFunction(rt.ctx, "clearInterval", clearTimerCb), setupEx)
+  setProp(rt.ctx, global, "sleep",
+    makeFunction(rt.ctx, "sleep", sleepCb), setupEx)

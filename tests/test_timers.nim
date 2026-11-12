@@ -67,3 +67,31 @@ test "setTimeout validates args":
 
 test "run without timers returns immediately":
   check runCode("40 + 2") == "42"
+
+test "sleep resolves to undefined":
+  check runCode("(async () => { await sleep(5); })()") == "undefined"
+  check runCode("(async () => { await sleep(5); return 'done'; })()") ==
+    "done"
+
+test "sleep returns a promise":
+  check runCode("sleep(0) instanceof Promise") == "true"
+
+test "sleep waits before resolving":
+  let p = tmpPath("t6.txt")
+  defer: removeFile(p)
+  discard runCode("const os = require('std/os'); " &
+    "(async () => { setTimeout(() => os.writeFile('" & p &
+    "', 'tick;'), 5); await sleep(40); " &
+    "os.writeFile('" & p & "', require('std/os').readFile('" & p &
+    "') + 'woke;'); })()")
+  check readFile(p) == "tick;woke;"
+
+test "sleep clamps negative and NaN delays":
+  check runCode("(async () => { await sleep(-5); })()") == "undefined"
+  check runCode("(async () => { await sleep(NaN); })()") == "undefined"
+
+test "sleep validates args":
+  expect CarneError:
+    discard runCode("sleep()")
+  expect CarneError:
+    discard runCode("sleep('nope')")

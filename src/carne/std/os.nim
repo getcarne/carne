@@ -22,10 +22,9 @@
 #   os.cacheDir()             -> string
 #   os.pid()                  -> int
 #   os.cpuCount()             -> int (logical processors, >= 1)
-#   os.sleep(ms)              -> undefined (blocks the loop)
 #   os.exec(cmd)              -> {code, output} (blocks the loop)
 #
-# Everything throws a JS Error on failure. sleep and exec block the
+# Everything throws a JS Error on failure. exec blocks the
 # event loop like any sync call: fine in scripts, stalls servers.
 
 import std/[algorithm, json, memfiles, os, osproc, times]
@@ -338,14 +337,6 @@ init proc(module: Module) =
     module.registerFn cpuCount():
       ## os.cpuCount() -> logical processor count (>= 1)
       toJS(ctx, max(countProcessors(), 1))
-
-    module.registerFn sleep(ms: int):
-      ## os.sleep(ms) -> undefined (blocks the loop)
-      if ms < 0:
-        throwError(ctx, "sleep: ms out of range (must be >= 0)", exception)
-        return nil
-      os.sleep(ms)
-      JSValueMakeUndefined(ctx)
 
     module.registerFn exec(cmd: string):
       ## os.exec(cmd) -> {code, output} (blocks the loop)
