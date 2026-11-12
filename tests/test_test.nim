@@ -6,12 +6,15 @@ import carne
 import carne/cli
 import carne/modules
 import carne/pkg/stdsync
+import carne/std/env
+import carne/std/terminal
 
 let stdHome = getTempDir() / "carne_std_test"
 removeDir(stdHome)
 createDir(stdJsStore(stdHome))
 copyFile(currentSourcePath.parentDir() / ".." / "src" / "carne" /
   "std" / "js" / "test.js", stdJsStore(stdHome) / "test.js")
+registerStd("std/terminal", terminal.install)
 initStdDispatcher(stdHome)
 
 test "expect matchers pass":

@@ -1,4 +1,4 @@
-// Carne std/test: minimal test runner (pure JS).
+// Carne std/test: minimal test runner (JS + std/terminal colors).
 //
 //   const { test, describe, it, expect, assert } = require("std/test");
 //   test("adds", () => { expect(1 + 1).toBe(2); });
@@ -12,10 +12,13 @@
 // (works under both `carne run` and `carne test`). Each `carne test`
 // file runs in a fresh runtime, so state never leaks between files.
 // Async test functions (promise-returning) are awaited serially.
-// Results print as `ok - <name>` / `fail - <name>` lines plus a
-// summary; any failure throws at the end (exit 1). `describe` bodies
+// Results print as `[ok] <name>` / `[failed] <name>` lines (green/red
+// on TTYs via std/terminal, plain on pipes) plus a summary; any
+// failure throws at the end (exit 1). `describe` bodies
 // must stay synchronous (grouping only, no assertions).
 "use strict";
+
+var terminal = require("std/terminal");
 /*
  * @typedef {object} TestStats - Runner counters.
  * @typedef {object} Expectation - Matcher set from expect().
@@ -129,23 +132,23 @@ function ensureScheduled() {
 /*
  * Records a pass and prints it.
  * @param {object} t - The test entry.
- * @returns {void} Prints `ok - <name>`.
+ * @returns {void} Prints green `[ok] <name>`.
  */
 function recordPass(t) {
   passCount++;
-  console.log("ok - " + t.name);
+  console.log(terminal.green("[ok]") + " " + t.name);
 }
 
 /*
  * Records a failure and prints it with an indented message.
  * @param {object} t - The test entry.
  * @param {any} e - The thrown value.
- * @returns {void} Prints `fail - <name>` plus detail.
+ * @returns {void} Prints red `[failed] <name>` plus detail.
  */
 function recordFail(t, e) {
   failCount++;
   var msg = e && e.message !== undefined ? String(e.message) : String(e);
-  console.log("fail - " + t.name);
+  console.log(terminal.red("[failed]") + " " + t.name);
   console.log("  " + msg.split("\n").join("\n  "));
 }
 
@@ -169,8 +172,10 @@ function finish() {
     return;
   }
   var total = queue.length;
-  console.log((failCount === 0 ? "pass " : "fail ") + passCount + "/" +
-    total + " tests");
+  var summary = (failCount === 0 ? "pass " : "fail ") + passCount + "/" +
+    total + " tests";
+  console.log(failCount === 0 ? terminal.green(summary) :
+    terminal.red(summary));
   if (failCount > 0) {
     var names = [];
     for (var i = 0; i < queue.length; i++) {
