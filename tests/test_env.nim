@@ -71,3 +71,23 @@ test "env.load missing file is a no-op":
 test "env.parse error shape":
   expect CarneError:
     discard runCode("require('std/env').parse('x', 'y')")
+
+test "env.stringify bare values":
+  check runCode(
+    "require('std/env').stringify({A:'1',B:'plain'})") ==
+    "A=1\nB=plain\n"
+
+test "env.stringify quotes when needed":
+  check runCode(
+    "require('std/env').stringify({A:'hello world',B:'x#y'})") ==
+    "A=\"hello world\"\nB=\"x#y\"\n"
+
+test "env.stringify roundtrip via parse":
+  check runCode(
+    "JSON.stringify(require('std/env').parse(" &
+    "require('std/env').stringify({A:'1',B:'x y'})))") ==
+    """{"A":"1","B":"x y"}"""
+
+test "env.stringify rejects bad keys":
+  expect CarneError:
+    discard runCode("require('std/env').stringify({'bad-key': '1'})")

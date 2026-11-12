@@ -1,11 +1,15 @@
-# Carne std/feed: RSS and Atom feed parsing via openparser.
+# Carne std/feed: RSS and Atom feed parsing and serialization via openparser.
 #
 #   const feed = require("std/feed");
-#   feed.parseRss(text)  -> feed object with items[]
-#   feed.parseAtom(text) -> feed object with entries[]
+#   feed.parseRss(text)      -> feed object with items[]
+#   feed.stringifyRss(feed)  -> string (RSS 2.0 XML)
+#   feed.parseAtom(text)     -> feed object with entries[]
+#   feed.stringifyAtom(feed) -> string (Atom XML)
 #
-# Parse-only in v1. Absent options stay absent.
+# Absent options stay absent; unknown input keys are ignored (all
+# followed paths are depth-capped).
 
+import std/math
 import std/options
 
 import javascriptcore
@@ -292,6 +296,283 @@ proc atomToJS(ctx: JSContextRef; f: AtomFeed; fname: string;
     return nil
   obj
 
+# -- JS -> native (stringify) ---------------------------------------
+
+proc feedErr(msg: string): ref CatchableError =
+  newException(CatchableError, msg)
+
+proc fRawHas(ctx: JSContextRef; obj: JSValueRef; key: string): bool =
+  let k = newJSString(key)
+  defer: JSStringRelease(k)
+  var ex: JSValueRef = nil
+  let prop = JSObjectGetProperty(ctx, obj, k, addr ex)
+  ex == nil and prop != nil and
+    JSValueGetType(ctx, prop) != kJSTypeUndefined
+
+proc fRawGet(ctx: JSContextRef; obj: JSValueRef; key: string): JSValueRef =
+  let k = newJSString(key)
+  defer: JSStringRelease(k)
+  var ex: JSValueRef = nil
+  let prop = JSObjectGetProperty(ctx, obj, k, addr ex)
+  if ex != nil or prop == nil:
+    raise feedErr("has an unreadable property \"" & key & "\"")
+  prop
+
+proc fRequireObj(ctx: JSContextRef; v: JSValueRef; what: string): JSValueRef =
+  if v == nil or JSValueGetType(ctx, v) != kJSTypeObject or
+      JSValueIsArray(ctx, v) or JSObjectIsFunction(ctx, v):
+    raise feedErr(what)
+  v
+
+proc fReadStr(ctx: JSContextRef; v: JSValueRef; what: string): string =
+  if v == nil or JSValueGetType(ctx, v) != kJSTypeString:
+    raise feedErr(what)
+  var ex: JSValueRef = nil
+  let s = JSValueToStringCopy(ctx, v, addr ex)
+  if s == nil:
+    raise feedErr(what)
+  defer: JSStringRelease(s)
+  $s
+
+proc fReadOptStr(ctx: JSContextRef; obj: JSValueRef;
+    key: string): Option[string] =
+  if not fRawHas(ctx, obj, key):
+    return none(string)
+  some(fReadStr(ctx, fRawGet(ctx, obj, key),
+    "\"" & key & "\" must be a string"))
+
+proc fReadReqStr(ctx: JSContextRef; obj: JSValueRef; key: string;
+    what: string): string =
+  if not fRawHas(ctx, obj, key):
+    return ""
+  fReadStr(ctx, fRawGet(ctx, obj, key), "\"" & key & "\" must be a string")
+
+proc fReadOptInt(ctx: JSContextRef; obj: JSValueRef;
+    key: string): Option[int] =
+  if not fRawHas(ctx, obj, key):
+    return none(int)
+  let v = fRawGet(ctx, obj, key)
+  if JSValueGetType(ctx, v) != kJSTypeNumber:
+    raise feedErr("\"" & key & "\" must be an integer")
+  var ex: JSValueRef = nil
+  let f = JSValueToNumber(ctx, v, addr ex)
+  if ex != nil or f != trunc(f) or abs(f) >= 9223372036854775808.0:
+    raise feedErr("\"" & key & "\" must be an integer")
+  some(int(f))
+
+proc fRawLen(ctx: JSContextRef; v: JSValueRef; what: string): int =
+  var ex: JSValueRef = nil
+  let lenKey = newJSString("length")
+  defer: JSStringRelease(lenKey)
+  let lenV = JSObjectGetProperty(ctx, v, lenKey, addr ex)
+  if ex != nil or lenV == nil:
+    raise feedErr(what)
+  var ex2: JSValueRef = nil
+  let n = int(JSValueToNumber(ctx, lenV, addr ex2))
+  if ex2 != nil or n < 0:
+    raise feedErr(what)
+  n
+
+proc fRawIndex(ctx: JSContextRef; v: JSValueRef; idx: int;
+    what: string): JSValueRef =
+  var eEx: JSValueRef = nil
+  let item = JSObjectGetPropertyAtIndex(ctx, v, cuint(idx), addr eEx)
+  if eEx != nil or item == nil:
+    raise feedErr(what)
+  item
+
+proc fRequireArr(ctx: JSContextRef; v: JSValueRef; what: string): JSValueRef =
+  if v == nil or JSValueGetType(ctx, v) != kJSTypeObject or
+      not JSValueIsArray(ctx, v):
+    raise feedErr(what)
+  v
+
+proc fReadSeq[T](ctx: JSContextRef; obj: JSValueRef; key: string;
+    what: string; conv: proc(ctx: JSContextRef;
+    v: JSValueRef): T): seq[T] =
+  if not fRawHas(ctx, obj, key):
+    return @[]
+  let v = fRequireArr(ctx, fRawGet(ctx, obj, key), what)
+  let n = fRawLen(ctx, v, what)
+  if n > maxDumpDepth * 1000:
+    raise feedErr("array is too large")
+  for idx in 0 ..< n:
+    result.add(conv(ctx, fRawIndex(ctx, v, idx, what)))
+
+proc fReadMedia(ctx: JSContextRef; v: JSValueRef): RssMediaContent =
+  let o = fRequireObj(ctx, v, "mediaContent must be an object")
+  result = RssMediaContent()
+  result.url = fReadOptStr(ctx, o, "url")
+  result.mediaType = fReadOptStr(ctx, o, "mediaType")
+  result.medium = fReadOptStr(ctx, o, "medium")
+  result.height = fReadOptInt(ctx, o, "height")
+  result.width = fReadOptInt(ctx, o, "width")
+
+proc fReadRssItem(ctx: JSContextRef; v: JSValueRef): RssItem =
+  let o = fRequireObj(ctx, v, "items entries must be objects")
+  result = RssItem()
+  result.title = fReadOptStr(ctx, o, "title")
+  result.link = fReadOptStr(ctx, o, "link")
+  result.description = fReadOptStr(ctx, o, "description")
+  result.pubDate = fReadOptStr(ctx, o, "pubDate")
+  result.category = fReadOptStr(ctx, o, "category")
+  result.guid = fReadOptStr(ctx, o, "guid")
+  result.source = fReadOptStr(ctx, o, "source")
+  if fRawHas(ctx, o, "mediaContent"):
+    result.mediaContent = some(fReadMedia(ctx, fRawGet(ctx, o,
+      "mediaContent")))
+
+proc jsToRss(ctx: JSContextRef; v: JSValueRef): RssFeed =
+  let o = fRequireObj(ctx, v, "feed must be an object")
+  result = RssFeed()
+  result.title = fReadReqStr(ctx, o, "title", "feed must be an object")
+  result.link = fReadReqStr(ctx, o, "link", "feed must be an object")
+  result.description = fReadReqStr(ctx, o, "description",
+    "feed must be an object")
+  result.copyright = fReadReqStr(ctx, o, "copyright", "feed must be an object")
+  result.pubDate = fReadReqStr(ctx, o, "pubDate", "feed must be an object")
+  result.lastBuildDate = fReadReqStr(ctx, o, "lastBuildDate",
+    "feed must be an object")
+  if fRawHas(ctx, o, "ttl"):
+    let tv = fRawGet(ctx, o, "ttl")
+    if JSValueGetType(ctx, tv) == kJSTypeNumber:
+      var ex: JSValueRef = nil
+      let f = JSValueToNumber(ctx, tv, addr ex)
+      if ex == nil:
+        result.ttl = int(f)
+  result.atomSelfLink = fReadOptStr(ctx, o, "atomSelfLink")
+  if fRawHas(ctx, o, "image"):
+    let io = fRequireObj(ctx, fRawGet(ctx, o, "image"),
+      "\"image\" must be an object")
+    result.image.url = fReadReqStr(ctx, io, "url", "\"image\" must be an object")
+    result.image.title = fReadReqStr(ctx, io, "title",
+      "\"image\" must be an object")
+    result.image.link = fReadReqStr(ctx, io, "link",
+      "\"image\" must be an object")
+  result.items = fReadSeq(ctx, o, "items", "items must be an array",
+    fReadRssItem)
+
+proc fReadText(ctx: JSContextRef; v: JSValueRef; what: string): AtomText =
+  let o = fRequireObj(ctx, v, what)
+  result = AtomText(kind: "text", value: "")
+  if fRawHas(ctx, o, "kind"):
+    result.kind = fReadStr(ctx, fRawGet(ctx, o, "kind"), what)
+  if fRawHas(ctx, o, "value"):
+    result.value = fReadStr(ctx, fRawGet(ctx, o, "value"), what)
+
+proc fReadPerson(ctx: JSContextRef; v: JSValueRef): AtomPerson =
+  let o = fRequireObj(ctx, v, "authors entries must be {name, ...}")
+  if not fRawHas(ctx, o, "name"):
+    raise feedErr("authors entries must be {name, ...}")
+  result = AtomPerson(name: fReadStr(ctx, fRawGet(ctx, o, "name"),
+    "authors entries must be {name, ...}"))
+  result.uri = fReadOptStr(ctx, o, "uri")
+  result.email = fReadOptStr(ctx, o, "email")
+
+proc fReadLink(ctx: JSContextRef; v: JSValueRef): AtomLink =
+  let o = fRequireObj(ctx, v, "links entries must be {href, ...}")
+  if not fRawHas(ctx, o, "href"):
+    raise feedErr("links entries must be {href, ...}")
+  result = AtomLink(href: fReadStr(ctx, fRawGet(ctx, o, "href"),
+    "links entries must be {href, ...}"))
+  result.rel = fReadOptStr(ctx, o, "rel")
+  if fRawHas(ctx, o, "type"):
+    result.mimeType = some(fReadStr(ctx, fRawGet(ctx, o, "type"),
+      "links entries must be {href, ...}"))
+  result.hreflang = fReadOptStr(ctx, o, "hreflang")
+  result.title = fReadOptStr(ctx, o, "title")
+  result.length = fReadOptInt(ctx, o, "length")
+
+proc fReadCategory(ctx: JSContextRef; v: JSValueRef): AtomCategory =
+  let o = fRequireObj(ctx, v, "categories entries must be {term, ...}")
+  if not fRawHas(ctx, o, "term"):
+    raise feedErr("categories entries must be {term, ...}")
+  result = AtomCategory(term: fReadStr(ctx, fRawGet(ctx, o, "term"),
+    "categories entries must be {term, ...}"))
+  result.scheme = fReadOptStr(ctx, o, "scheme")
+  result.label = fReadOptStr(ctx, o, "label")
+
+proc fReadOptText(ctx: JSContextRef; obj: JSValueRef;
+    key: string): Option[AtomText] =
+  if not fRawHas(ctx, obj, key):
+    return none(AtomText)
+  some(fReadText(ctx, fRawGet(ctx, obj, key),
+    "\"" & key & "\" must be {kind, value}"))
+
+proc fReadContent(ctx: JSContextRef; obj: JSValueRef;
+    key: string): Option[AtomContent] =
+  if not fRawHas(ctx, obj, key):
+    return none(AtomContent)
+  let o = fRequireObj(ctx, fRawGet(ctx, obj, key),
+    "\"" & key & "\" must be an object")
+  var c = AtomContent()
+  c.kind = fReadOptStr(ctx, o, "kind")
+  c.src = fReadOptStr(ctx, o, "src")
+  c.value = fReadOptStr(ctx, o, "value")
+  some(c)
+
+proc fReadEntry(ctx: JSContextRef; v: JSValueRef): AtomEntry =
+  let o = fRequireObj(ctx, v, "entries must be objects")
+  if not fRawHas(ctx, o, "id"):
+    raise feedErr("entries must be objects")
+  result = AtomEntry(id: fReadStr(ctx, fRawGet(ctx, o, "id"),
+    "entries must be objects"))
+  if not fRawHas(ctx, o, "title"):
+    raise feedErr("entries must be objects")
+  result.title = fReadText(ctx, fRawGet(ctx, o, "title"),
+    "\"title\" must be {kind, value}")
+  result.updated = fReadReqStr(ctx, o, "updated", "entries must be objects")
+  result.authors = fReadSeq(ctx, o, "authors", "authors must be an array",
+    fReadPerson)
+  result.contributors = fReadSeq(ctx, o, "contributors",
+    "contributors must be an array", fReadPerson)
+  result.links = fReadSeq(ctx, o, "links", "links must be an array",
+    fReadLink)
+  result.categories = fReadSeq(ctx, o, "categories",
+    "categories must be an array", fReadCategory)
+  result.summary = fReadOptText(ctx, o, "summary")
+  result.content = fReadContent(ctx, o, "content")
+  result.rights = fReadOptText(ctx, o, "rights")
+  result.published = fReadOptStr(ctx, o, "published")
+
+proc jsToAtom(ctx: JSContextRef; v: JSValueRef): AtomFeed =
+  let o = fRequireObj(ctx, v, "feed must be an object")
+  if not fRawHas(ctx, o, "id"):
+    raise feedErr("feed must be an object")
+  result = AtomFeed(id: fReadStr(ctx, fRawGet(ctx, o, "id"),
+    "feed must be an object"))
+  if not fRawHas(ctx, o, "title"):
+    raise feedErr("feed must be an object")
+  result.title = fReadText(ctx, fRawGet(ctx, o, "title"),
+    "\"title\" must be {kind, value}")
+  result.updated = fReadReqStr(ctx, o, "updated", "feed must be an object")
+  result.authors = fReadSeq(ctx, o, "authors", "authors must be an array",
+    fReadPerson)
+  result.contributors = fReadSeq(ctx, o, "contributors",
+    "contributors must be an array", fReadPerson)
+  result.links = fReadSeq(ctx, o, "links", "links must be an array",
+    fReadLink)
+  result.categories = fReadSeq(ctx, o, "categories",
+    "categories must be an array", fReadCategory)
+  result.subtitle = fReadOptText(ctx, o, "subtitle")
+  result.rights = fReadOptText(ctx, o, "rights")
+  if fRawHas(ctx, o, "generator"):
+    let go = fRequireObj(ctx, fRawGet(ctx, o, "generator"),
+      "\"generator\" must be an object")
+    if not fRawHas(ctx, go, "value"):
+      raise feedErr("\"generator\" must be an object")
+    var g = AtomGenerator(value: fReadStr(ctx, fRawGet(ctx, go, "value"),
+      "\"generator\" must be an object"))
+    g.uri = fReadOptStr(ctx, go, "uri")
+    g.version = fReadOptStr(ctx, go, "version")
+    result.generator = some(g)
+  result.icon = fReadOptStr(ctx, o, "icon")
+  result.logo = fReadOptStr(ctx, o, "logo")
+  result.entries = fReadSeq(ctx, o, "entries", "entries must be an array",
+    fReadEntry)
+  result.lang = fReadOptStr(ctx, o, "lang")
+  result.base = fReadOptStr(ctx, o, "base")
+
 # -- JS entry points ---------------------------------------------------
 
 ## Builds the std/feed namespace object.
@@ -311,6 +592,14 @@ init proc(module: Module) =
         throwError(ctx, "parseRss: " & e.msg, exception)
         nil
 
+    module.registerFn stringifyRss(value: JSValueRef):
+      ## feed.stringifyRss(feed) -> string (RSS 2.0 XML)
+      try:
+        toJS(ctx, toRssXml(jsToRss(ctx, value)))
+      except CatchableError as e:
+        throwError(ctx, "stringifyRss: " & e.msg, exception)
+        nil
+
     module.registerFn parseAtom(text: string):
       ## feed.parseAtom(text) -> feed object with entries[]
       try:
@@ -322,4 +611,12 @@ init proc(module: Module) =
         j
       except CatchableError as e:
         throwError(ctx, "parseAtom: " & e.msg, exception)
+        nil
+
+    module.registerFn stringifyAtom(value: JSValueRef):
+      ## feed.stringifyAtom(feed) -> string (Atom XML)
+      try:
+        toJS(ctx, toAtomXml(jsToAtom(ctx, value)))
+      except CatchableError as e:
+        throwError(ctx, "stringifyAtom: " & e.msg, exception)
         nil

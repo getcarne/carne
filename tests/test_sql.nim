@@ -56,3 +56,18 @@ test "sql exposes exactly the three dialect namespaces":
   check runCode(
     "Object.keys(require('std/sql')).sort().join(',')") ==
     "mysql,postgres,sqlite"
+
+test "sql stringify roundtrip":
+  check runCode(
+    "require('std/sql').sqlite.stringify(require('std/sql').sqlite.parse(" &
+    "'SELECT a FROM t')).toUpperCase().includes('SELECT')") == "true"
+  check runCode(
+    "require('std/sql').sqlite.parse(require('std/sql').sqlite.stringify(" &
+    "require('std/sql').sqlite.parse('SELECT a FROM t'))).kind") ==
+    "StmtList"
+
+test "sql format normalizes":
+  check runCode(
+    "require('std/sql').sqlite.format('select a from t')") ==
+    runCode("require('std/sql').sqlite.stringify(require('std/sql')" &
+    ".sqlite.parse('select a from t'))")

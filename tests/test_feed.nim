@@ -42,3 +42,16 @@ test "feed parse errors throw":
     discard runCode("require('std/feed').parseRss('<nope>')")
   expect CarneError:
     discard runCode("require('std/feed').parseAtom('not xml')")
+
+test "feed stringifyRss roundtrip":
+  check runCode(
+    "require('std/feed').parseRss(require('std/feed').stringifyRss(" &
+    "require('std/feed').parseRss(" & sampleRss & "))).title") == "T"
+  check runCode(
+    "require('std/feed').stringifyRss(require('std/feed').parseRss(" &
+    sampleRss & ")).includes('<title>T</title>')") == "true"
+
+test "feed stringifyAtom roundtrip":
+  check runCode(
+    "require('std/feed').parseAtom(require('std/feed').stringifyAtom(" &
+    "require('std/feed').parseAtom(" & sampleAtom & "))).id") == "u:1"

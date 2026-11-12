@@ -28,3 +28,16 @@ test "vcard parse contact":
 test "vcard parse error throws":
   expect CarneError:
     discard runCode("require('std/vcard').parse('not a vcard')")
+
+test "vcard stringify roundtrip":
+  check runCode(
+    "require('std/vcard').stringify(require('std/vcard').parse(" &
+    sampleCard & ")[0]).includes('FN:Ada Lovelace')") == "true"
+  check runCode(
+    "require('std/vcard').parse(require('std/vcard').stringify(" &
+    "require('std/vcard').parse(" & sampleCard & ")[0]))[0].fn") ==
+    "Ada Lovelace"
+
+test "vcard stringify rejects non-objects":
+  expect CarneError:
+    discard runCode("require('std/vcard').stringify(42)")

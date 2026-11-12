@@ -49,3 +49,18 @@ test "css validate flags bad value but allows custom props":
   check runCode(
     "JSON.stringify(require('std/css').validate('a { --brand: #fff; }'))") ==
     "[]"
+
+test "css stringify roundtrip":
+  check runCode(
+    "require('std/css').stringify(require('std/css').parse(" &
+    "'a { color: red; }')).includes('color: red')") == "true"
+  check runCode(
+    "JSON.stringify(require('std/css').parse(require('std/css')" &
+    ".stringify(require('std/css').parse('a { color: red; }')))" &
+    ".rules[0].declarations[0])") ==
+    """{"kind":"Declaration","property":"color","value":"red",""" &
+    """"important":false}"""
+
+test "css stringify rejects bad input":
+  expect CarneError:
+    discard runCode("require('std/css').stringify({rules: [{kind: 'Nope'}]})")

@@ -31,3 +31,15 @@ test "html inline and block helpers":
 test "html innerText validates input":
   expect CarneError:
     discard runCode("require('std/html').innerText(42)")
+
+test "html stringify roundtrip":
+  check runCode(
+    "require('std/html').stringify(require('std/html').parse(" &
+    "'<p>hi <b>ada</b></p>'))") == "<p>hi<b>ada</b></p>"
+  check runCode(
+    "require('std/html').stringify(require('std/html').parse(" &
+    "'<br>'))") == "<br>"
+  check runCode(
+    "JSON.stringify(require('std/html').parse(require('std/html')" &
+    ".stringify(require('std/html').parse('<p>hi</p>'))))") ==
+    """[{"tag":"p","attrs":{},"children":["hi"]}]"""
