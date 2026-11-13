@@ -41,6 +41,10 @@ script that just runs, take Carne.
 - Built-in archives and compression: `tar`, `zip`, `rar`, `gz`, `lz4`, `bz2`, `brotli` via [pkg/archive](https://github.com/nimbase/archive)
 - i18n via GNU Gettext PO/MO
 - CSS and JavaScript bundler via [pkg/squeezy](https://github.com/openpeeps/squeezy)
+- Built-in database driver and ORM for sqlite and postgres, async + sync (`std/db`)
+- Multi-worker HTTP serving off one port, with zero-copy file responses (sendfile, ETag/Range)
+- Built-in test runner: `carne test` discovers and runs `tests/**/*.test.js` (`std/test`)
+- Terminal toolkit: styling, prompts, password reads, CLI arg parsing (`std/terminal`)
 - Built-in package manager (`carne pkg`)
   - one shared global store in your home dir, no `node_modules`,
     no duplicated installs across projects
