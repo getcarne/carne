@@ -42,11 +42,15 @@ test "measure propagates the original throw":
     "} catch (e) { e.message; }") == "boom"
 
 test "compare ranks two functions and anchors speedup":
+  # Workloads differ by ~1000x in absolute ms terms (not just a loop
+  # ratio at the microsecond scale), with warmup so JIT tier-up
+  # happens before sampling: on noisy virtualized runners 20 raw
+  # samples of microsecond bodies invert (macos-15-intel did).
   check runCode(
     "const b = require('std/benchmark'); " &
-    "const slow = () => { let s = 0; for (let i = 0; i < 5000; i++) s += Math.sqrt(i); return s; }; " &
+    "const slow = () => { let s = 0; for (let i = 0; i < 200000; i++) s += Math.sqrt(i); return s; }; " &
     "const fast = () => { let s = 0; for (let i = 0; i < 50; i++) s += Math.sqrt(i); return s; }; " &
-    "const c = b.compare({slow: slow, fast: fast}, {iterations: 20}); " &
+    "const c = b.compare({slow: slow, fast: fast}, {iterations: 30, warmup: 10}); " &
     "JSON.stringify([c.fastest, c.ranking[0], c.ranking.length, " &
     "c.speedup.slow === 1, c.speedup.fast > 1, " &
     "Object.keys(c.results).length])") ==
