@@ -69,7 +69,7 @@
 # scope in v1): `(async () => { ... })()`. The runtime unwraps a
 # top-level completion promise, so tests assert on it directly.
 
-import std/[json, options, os, strutils, tables, times]
+import std/[json, math, options, os, strutils, tables, times]
 import std/httpcore except HttpMethod
 
 import javascriptcore
@@ -429,7 +429,7 @@ proc reqSetProperty(ctx: JSContextRef; obj: JSObjectRef; name: JSStringRef;
   if st == nil:
     return false
   var jerr = ""
-  let node = jsToJson(ctx, value, jerr)
+  let node = jsToJsonNode(ctx, value, jerr)
   if node == nil:
     return false
   st.over[ReqField(idx)] = node
@@ -777,6 +777,11 @@ proc serveBinary(ctx: JSContextRef; res: HttpResponse; ret, bodyProp: JSValueRef
     copyMem(addr bytes[0], unsafeAddr raw[0], raw.len)
   res.send(bytes)
 
+proc serveObjectFast(ctx: JSContextRef; res: HttpResponse; ret: JSValueRef;
+  headOnly: bool): bool
+  ## Scalar-body fast path for {status?, headers?, body?} (defined
+  ## below, beside the other serve helpers).
+
 proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
   ## powpow dispatch: runs on the loop thread, which is the JS thread
   ## (borrowed loop), so JS calls are sound; the cast covers the global
@@ -856,8 +861,13 @@ proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
       if isByteView(c, bodyProp):
         serveBinary(c, res, ret, bodyProp, headOnly)
         return
+    # Scalar-body fast path: {status?, headers?, body?} goes out via
+    # direct field reads. Anything needing JSON serialization falls
+    # through to the generic snapshot with identical behavior.
+    if serveObjectFast(c, res, ret, headOnly):
+      return
     var jerr = ""
-    let node = jsToJson(c, ret, jerr)
+    let node = jsToJsonNode(c, ret, jerr)
     if node == nil:
       res.sendError(Http500, "handler returned non-serializable value")
       return
@@ -921,6 +931,137 @@ proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
     for (k, v) in hdrs:
       res.header(k, v)
     res.send(body)
+
+proc readHeaderPairs(ctx: JSContextRef; obj: JSValueRef;
+    err: var string): seq[(string, string)] =
+  ## Direct JS -> header pairs without a NimValue middle layer (which
+  ## would allocate a table plus a value per header): strings once,
+  ## arrays of strings as repeated headers (e.g. multiple Set-Cookie).
+  ## Sets err on anything else (callers answer 500).
+  result = @[]
+  err = ""
+  let names = JSObjectCopyPropertyNames(ctx, obj)
+  if names == nil:
+    err = "headers are unreadable"
+    return
+  defer: JSPropertyNameArrayRelease(names)
+  let count = int(JSPropertyNameArrayGetCount(names))
+  for idx in 0 ..< count:
+    let jsName = JSPropertyNameArrayGetNameAtIndex(names, csize_t(idx))
+    let key = $jsName
+    var pEx: JSValueRef = nil
+    let prop = JSObjectGetProperty(ctx, obj, jsName, addr pEx)
+    if pEx != nil or prop == nil:
+      err = "header \"" & key & "\" is unreadable"
+      return
+    if JSValueGetType(ctx, prop) == kJSTypeString:
+      result.add((key, valueToString(ctx, prop)))
+      continue
+    if not JSValueIsArray(ctx, prop):
+      err = "header values must be strings"
+      return
+    var verr = ""
+    let v = fromJS(ctx, prop, verr)
+    if verr != "" or v.kind != nvkArray:
+      err = "header values must be strings"
+      return
+    for item in v.arr:
+      if item.kind != nvkString:
+        err = "header values must be strings"
+        return
+      result.add((key, item.s))
+
+proc serveObjectFast(ctx: JSContextRef; res: HttpResponse; ret: JSValueRef;
+    headOnly: bool): bool =
+  ## Fast path for the common handler shape {status?, headers?, body?}
+  ## with a scalar body: reads the three fields directly (two property
+  ## gets + one live body read) instead of a generic snapshot walk.
+  ## True when the response was answered (or a 500 for malformed
+  ## parts); false when the body needs JSON serialization (objects,
+  ## arrays, exotic floats), in which case the caller runs the generic
+  ## snapshot with identical behavior.
+  result = true
+  var code = Http200
+  var err = ""
+  let s = getField(ctx, ret, "status", err)
+  if err != "":
+    res.sendError(Http500, "handler status is unreadable")
+    return
+  case s.kind
+  of nvkUndefined: discard
+  of nvkInt:
+    if s.i < 100 or s.i > 599:
+      res.sendError(Http500, "handler status must be 100..599")
+      return
+    code = HttpCode(int(s.i))
+  else:
+    res.sendError(Http500, "handler status must be 100..599")
+    return
+  var hdrs: seq[(string, string)] = @[]
+  let hProp = liveProp(ctx, ret, "headers")
+  if hProp == nil:
+    res.sendError(Http500, "handler headers are unreadable")
+    return
+  if JSValueGetType(ctx, hProp) != kJSTypeUndefined:
+    if JSValueGetType(ctx, hProp) != kJSTypeObject or
+        JSValueIsArray(ctx, hProp) or JSObjectIsFunction(ctx, hProp):
+      res.sendError(Http500, "handler headers must be an object")
+      return
+    var herr = ""
+    hdrs = readHeaderPairs(ctx, hProp, herr)
+    if herr != "":
+      res.sendError(Http500, "handler header values must be strings")
+      return
+  let bodyProp = liveProp(ctx, ret, "body")
+  if bodyProp == nil:
+    res.sendError(Http500, "handler body is unreadable")
+    return
+  var body = ""
+  var bodyIsJson = false
+  case JSValueGetType(ctx, bodyProp)
+  of kJSTypeUndefined, kJSTypeNull:
+    discard
+  of kJSTypeString:
+    body = valueToString(ctx, bodyProp)
+  of kJSTypeBoolean:
+    body = if JSValueToBoolean(ctx, bodyProp): "true" else: "false"
+    bodyIsJson = true
+  of kJSTypeNumber:
+    var ex: JSValueRef = nil
+    let f = JSValueToNumber(ctx, bodyProp, addr ex)
+    if ex != nil:
+      res.sendError(Http500, "handler body is unreadable")
+      return
+    if f != f or abs(f) == Inf:
+      # JSON.stringify maps NaN/Infinity to null: empty, not "nan".
+      discard
+    elif f == trunc(f) and abs(f) < 9223372036854775808.0:
+      body = $int64(f)
+      bodyIsJson = true
+    else:
+      # Exotic floats keep the generic path's exact formatting.
+      return false
+  else:
+    return false
+  # Null-body statuses (fetch semantics) and HEAD never carry a body.
+  if headOnly or code in {Http101, Http204, Http205, Http304}:
+    body = ""
+    bodyIsJson = false
+  # The object form defaults Content-Type like the other return paths
+  # (string -> text/plain, JSON -> application/json) unless the
+  # handler set one explicitly (matched case-insensitively).
+  var hasContentType = false
+  for (k, v) in hdrs:
+    if k.toLowerAscii() == "content-type":
+      hasContentType = true
+      break
+  if not hasContentType and body.len > 0:
+    hdrs.add(("Content-Type",
+      if bodyIsJson: "application/json" else: "text/plain; charset=utf-8"))
+  res.status(code)
+  for (k, v) in hdrs:
+    res.header(k, v)
+  res.send(body)
 
 proc serveOptNum(ctx: JSContextRef; obj: JSValueRef; name, key: string;
     allowZero: bool): int =
