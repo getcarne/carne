@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="https://openpeeps.github.io/carne">API reference</a><br>
+  <a href="https://getcarne.github.io/carne">API reference</a><br>
   <img src="https://github.com/openpeeps/carne/workflows/test/badge.svg" alt="Github Actions">  <img src="https://github.com/openpeeps/carne/workflows/docs/badge.svg" alt="Github Actions">
 </p>
 
