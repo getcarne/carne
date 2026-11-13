@@ -114,3 +114,49 @@ test "gettext writeMo error throws":
   expect CarneError:
     discard runCode(
       "require('std/gettext').writeMo('msgid \"unterminated', 'x.mo')")
+
+test "gettext catalog handles translate without re-parsing":
+  check runCode(
+    "var g = require('std/gettext');" &
+    "var id = g.openCatalog(" & jsPoCtx & ");" &
+    "var out = [];" &
+    "out.push(g.translateCatalog(id, 'file', 'menu'));" &
+    "out.push(g.ntranslateCatalog(id, 'file', 'files', 5, 'menu'));" &
+    "out.push(g.hasCatalog(id, 'file', 'menu'));" &
+    "out.push(g.hasCatalog(id, 'missing'));" &
+    "g.closeCatalog(id);" &
+    "try { g.translateCatalog(id, 'file'); out.push('no-throw'); }" &
+    "catch (e) { out.push('closed-throws'); }" &
+    "JSON.stringify(out)") ==
+    """["fichier","fichiers",true,false,"closed-throws"]"""
+
+test "gettext mo catalog handles and close is idempotent":
+  let moPath = getTempDir() / "carne_gettext_ctx.mo"
+  check runCode(
+    "var g = require('std/gettext');" &
+    "g.writeMo(" & jsPoCtx & ", '" & moPath & "');" &
+    "var id = g.openCatalogMo('" & moPath & "');" &
+    "var out = [];" &
+    "out.push(g.ntranslateCatalog(id, 'file', 'files', 1, 'menu'));" &
+    "out.push(g.translateCatalog(id, 'Open', 'menu'));" &
+    "g.closeCatalog(id);" &
+    "g.closeCatalog(id);" &
+    "try { g.hasCatalog(id, 'file'); out.push('no-throw'); }" &
+    "catch (e) { out.push('closed-throws'); }" &
+    "JSON.stringify(out)") ==
+    """["fichier","Ouvrir","closed-throws"]"""
+  removeFile(moPath)
+
+test "gettext unknown catalog id throws":
+  expect CarneError:
+    discard runCode("require('std/gettext').translateCatalog(999999, 'x')")
+  expect CarneError:
+    discard runCode("require('std/gettext').closeCatalog('x')")
+
+test "gettext pluralIndexCatalog follows the catalog rule":
+  check runCode(
+    "var g = require('std/gettext');" &
+    "var id = g.openCatalog(" & jsPo & ");" &
+    "var out = [g.pluralIndexCatalog(id, 1), g.pluralIndexCatalog(id, 5)];" &
+    "g.closeCatalog(id);" &
+    "JSON.stringify(out)") == """[0,1]"""
