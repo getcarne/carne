@@ -27,7 +27,18 @@
 # their case on the wire.
 # HEAD requests and 101/204/205/304 statuses answer with an empty body
 # (fetch null-body-status semantics). The request object carries
-# {method, path, query, url, headers, body, clientIp}.
+# {method, path, query, url, headers, body, clientIp} plus a lazy
+# `multipart` field: powpow auto-streams multipart/form-data uploads to
+# tmpfiles from the first body byte (per-file/per-field/total caps from
+# the serve `maxBodySize` opt enforced at the protocol level, 413/400
+# before dispatch), and `multipart` exposes them as
+# {fields: {name: value|[values]}, files: [{field, filename,
+# contentType, size, path}]}. File parts need a filename and a
+# Content-Type header (what curl and browsers send; a filename-only
+# part reads as a text field). File paths are tmpfiles deleted right
+# after the handler returns: read or copy them during handling
+# (os.readFileBytes gives binary-safe Uint8Arrays). Non-multipart
+# requests and truncated uploads read {fields: {}, files: []}.
 # serve takes tuning opts: serve(port[, host][, opts], handler) with
 # opts = {keepAliveMs?, readTimeoutMs?, maxBodySize?, workers?}.
 # workers (1..64, default 1) scales serving across worker threads: each
@@ -59,6 +70,8 @@ import powpow/types
 import powpow/proto/http
 import powpow/proto/httpclient
 import powpow/proto/httpserver
+from pkg/multipart import MultipartFile, MultipartStreamer, isComplete,
+  boundaries, cleanup
 from powpow/loop import stop, register
 from powpow/net/tls import SslContext, newClientTlsContext
 from powpow/net/common import setNonBlocking
@@ -218,14 +231,15 @@ proc responseToJson(res: HttpClientResponse): JsonNode =
 # forever); fields never accessed read as "" ({} for headers) once the
 # handler has returned and the pooled powpow request is recycled.
 # Assignments stick via a JsonNode override snapshot. Enumeration
-# (Object.keys, spread, JSON.stringify) sees the same seven fields.
+# (Object.keys, spread, JSON.stringify) sees the same eight fields.
 
 type
   ReqField = enum
-    rfMethod, rfPath, rfQuery, rfUrl, rfHeaders, rfBody, rfClientIp
+    rfMethod, rfPath, rfQuery, rfUrl, rfHeaders, rfBody, rfClientIp,
+    rfMultipart
 
 const reqFieldNames: array[ReqField, string] = ["method", "path", "query",
-  "url", "headers", "body", "clientIp"]
+  "url", "headers", "body", "clientIp", "multipart"]
 
 type
   ReqState = ref object
@@ -235,6 +249,7 @@ type
     ctx: JSContextRef
     strs: array[ReqField, string]
     headers: seq[(string, string)]
+    multi: JsonNode
     have: set[ReqField]
     over: array[ReqField, JsonNode]
     haveOver: set[ReqField]
@@ -278,6 +293,46 @@ proc buildHeadersObj(ctx: JSContextRef; pairs: seq[(string, string)]): JSValueRe
     if ex != nil:
       return nil
 
+proc multipartSnapshot(req: HttpRequest): JsonNode =
+  ## powpow-backed multipart parse for the lazy `multipart` req field:
+  ## text fields inline (repeated names become arrays), files as tmp
+  ## paths (auto-streamed from the first body byte, so nothing is
+  ## copied twice and binary stays binary). Empty shape when the
+  ## content type is not multipart or the upload did not complete;
+  ## config garbage answers the same (never a throw into the handler).
+  result = newJObject()
+  result["fields"] = newJObject()
+  result["files"] = newJArray()
+  let mp =
+    try: req.getMultipart()
+    except CatchableError: nil
+  if mp == nil or not mp.isComplete():
+    return
+  for b in mp.boundaries():
+    if b.fieldName.len == 0:
+      continue
+    if b.dataType == MultipartFile:
+      var f = newJObject()
+      f["field"] = %b.fieldName
+      f["filename"] = %b.fileName
+      f["contentType"] = %b.fileType
+      f["size"] = newJInt(b.fileSize)
+      f["path"] = %b.filePath
+      result["files"].add(f)
+    else:
+      let v = %b.value
+      if result["fields"].hasKey(b.fieldName):
+        let cur = result["fields"][b.fieldName]
+        if cur.kind == JArray:
+          cur.add(v)
+        else:
+          var arr = newJArray()
+          arr.add(cur)
+          arr.add(v)
+          result["fields"][b.fieldName] = arr
+      else:
+        result["fields"][b.fieldName] = v
+
 proc reqConvert(st: ReqState; f: ReqField): JSValueRef =
   ## Fresh JS value for field f, snapshotting live data on first access.
   ## nil when the value is unavailable (caller yields undefined).
@@ -313,6 +368,17 @@ proc reqConvert(st: ReqState; f: ReqField): JSValueRef =
       st.headers.add((snap(k), snap(v)))
     st.have.incl(f)
     return buildHeadersObj(st.ctx, st.headers)
+  of rfMultipart:
+    if f in st.have:
+      return jsonToJS(st.ctx, st.multi)
+    if not st.alive:
+      st.multi = newJObject()
+      st.multi["fields"] = newJObject()
+      st.multi["files"] = newJArray()
+    else:
+      st.multi = multipartSnapshot(st.req)
+    st.have.incl(f)
+    return jsonToJS(st.ctx, st.multi)
 
 proc reqHasProperty(ctx: JSContextRef; obj: JSObjectRef;
     name: JSStringRef): bool {.cdecl.} =
@@ -575,9 +641,18 @@ proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
     let ret = JSObjectCallAsFunction(c, e.handlerFn, nil, 1, addr argv[0],
       addr ex)
     # The handler ran: the pooled req/res recycle from here, so fields
-    # never read above now answer as defaults (documented).
+    # never read above now answer as defaults (documented). Multipart
+    # uploads streamed to tmpfiles during parsing; drop them now that
+    # the handler is done (handed-out paths stay valid only while it
+    # runs). Untouched uploads leave files too; non-multipart requests
+    # carry no streamer, so this is a no-op for them.
     if st != nil:
       st.alive = false
+      try:
+        if st.req.streamer != nil:
+          st.req.streamer[].cleanup()
+      except CatchableError:
+        discard
     if ex != nil or ret == nil:
       if e.rt.uncaught.len == 0:
         e.rt.uncaught =

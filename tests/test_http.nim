@@ -3,8 +3,10 @@ import unittest
 import carne
 import carne/modules
 import carne/std/http
+import carne/std/os
 
 registerStd("std/http", http.install)
+registerStd("std/os", os.install)
 
 const preamble = "(async () => { const http = require('std/http'); "
 
@@ -247,6 +249,26 @@ test "handler array header values send repeated headers":
     "http.close(srv.port); " &
     "return res.status + ':' + res.headers['x-multi'] + ':' + " &
     "res.headers['x-single']; })()") == "200:b:s"
+
+test "multipart field parses uploads and cleans tmpfiles":
+  check runCode(preamble &
+    "const os = require('std/os'); " &
+    "var saved = ''; " &
+    "const srv = http.serve(18126, req => { " &
+    "if (req.path === '/u') { " &
+    "const f = req.multipart.files[0]; saved = f.path; " &
+    "return {body: JSON.stringify({fields: req.multipart.fields, " &
+    "file: f.filename + ':' + f.size})}; } " &
+    "return {body: String(os.isFile(saved))}; }); " &
+    "const u = await http.post('http://127.0.0.1:18126/u', " &
+    "'--b26\\r\\nContent-Disposition: form-data; name=\"t\"\\r\\n\\r\\nhi\\r\\n' + " &
+    "'--b26\\r\\nContent-Disposition: form-data; name=\"f\"; filename=\"a.txt\"\\r\\n' + " &
+    "'Content-Type: text/plain\\r\\n\\r\\n0123456789\\r\\n--b26--\\r\\n', " &
+    "{headers: {'Content-Type': 'multipart/form-data; boundary=b26'}}); " &
+    "const c = await http.get('http://127.0.0.1:18126/check'); " &
+    "http.close(srv.port); " &
+    "return u.status + ':' + u.body + ':' + c.body; })()") ==
+    "200:{\"fields\":{\"t\":\"hi\"},\"file\":\"a.txt:10\"}:false"
 
 test "client decodes invalid UTF-8 with replacement":
   check runCode(preamble &
