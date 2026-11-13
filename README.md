@@ -57,38 +57,53 @@ script that just runs, take Carne.
 ```
 A JavaScript runtime in Nim
   (c) OpenPeeps | MIT License
-  Build Version: 0.1.2
+  Build Version: 0.1.3
 
 usage: carne <command> [args] [options]
 
-Scripting
-  run <script.js> [args]  run a .js file
-  test [file] [...]       run tests/**/*.test.js (or the given file)
+Scripting:
+  run <script.js> [args]    run a .js file
+  test [file] [...]         run tests/**/*.test.js (or the given file)
 
-Standard library
-  std init                download JS stdlib (std/*) into ~/.carne/std
-  std update              refresh all JS stdlib files
-  std list                show all std modules (built-in and JS)
+Standard library:
+  std init                  download JS stdlib (std/*) into ~/.carne/std
+  std update                refresh all JS stdlib files
+  std list                  show installed JS stdlib version and files
 
-Packages
-  pkg install <spec>      install a package by name, git URL (--url=... pins a source URL)
-  pkg remove <name> [ver] uninstall a package (one version, or all)
-  pkg update [name]       update one package, or all when omitted
-  pkg list                list installed packages
-  pkg develop <path>      editable install from a local directory
-  pkg prune               remove orphaned packages
-  pkg refresh             re-download registry data
-  pkg publish [opts]      open a PR adding this package to the registry
+Packages:
+  pkg init [dir]            scaffold a new package (wizard, -Y skips it)
+    --yes, -Y               skip the wizard, use defaults
+  pkg install <spec>        install a package by name, git URL, gh:user/repo alias, name#ref, or name + source URL
+    --url:<url>             pin a source URL
+  pkg remove <name> [ver]   uninstall one version, or all
+    --yes                   skip confirmation prompts
+  pkg update [name]         update one package, or all
+  pkg list                  list installed packages
+  pkg develop [path]        editable install from a local directory
+  pkg prune                 remove orphaned packages
+    --yes                   skip confirmation prompts
+  pkg refresh               re-download registry data
+  pkg publish               open a PR adding this package to the registry
+    --tags:<list>           comma-separated tags
+    --web:<url>             package website URL
+    --url:<url>             pin a source URL
+    --dry-run               no network, git, or secret changes
+    --yes                   skip confirmation prompts
 
-Versioning
-  bump [semver] [--level=..] [--dep=..] bump version in package.json (or a direct dep)
-  upgrade [version]       self-update carne from GitHub releases (into ~/.carne/bin)
+Versioning:
+  bump [semver]             bump version in package.json (or a direct dep)
+    --level:<level>         major, minor, or patch
+    --dep:<name>            bump a direct dependency spec (prefix kept)
+  upgrade [version]         self-update carne from GitHub releases (into ~/.carne/bin)
+    --dry-run               print resolved URLs only, no changes
 
-Inspect
-  dump [pkg[@ref]]        print package.json (cwd or an installed package)
+Inspect:
+  dump [pkg[@ref]]          print package.json (cwd or an installed package)
 
-  -h, --help              show this help
-  --version               show version
+options:
+    --isatty:<true|false>   override TTY detection (default: auto-detect)
+  -h, --help                show this help
+  --version                 show version
 ```
 
 ## Package manager
