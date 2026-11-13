@@ -270,6 +270,24 @@ test "multipart field parses uploads and cleans tmpfiles":
     "return u.status + ':' + u.body + ':' + c.body; })()") ==
     "200:{\"fields\":{\"t\":\"hi\"},\"file\":\"a.txt:10\"}:false"
 
+test "file return serves zero-copy with ranges and conditionals":
+  check runCode(preamble &
+    "const srv = http.serve(18127, req => { " &
+    "if (req.path === '/bad') return {file: 42}; " &
+    "return {file: 'tests/fixtures/hello.txt', " &
+    "headers: {'X-Test': 'yes', 'Content-Type': 'ignored'}}; }); " &
+    "const a = await http.get('http://127.0.0.1:18127/'); " &
+    "const b = await http.fetch('http://127.0.0.1:18127/', " &
+    "{headers: {Range: 'bytes=0-3'}}); " &
+    "const c = await http.fetch('http://127.0.0.1:18127/', " &
+    "{headers: {'If-None-Match': a.headers['etag']}}); " &
+    "const d = await http.fetch('http://127.0.0.1:18127/bad'); " &
+    "http.close(srv.port); " &
+    "return a.status + ':' + a.body + ':' + a.headers['x-test'] + ':' + " &
+    "b.status + ':' + b.body + ':' + b.headers['content-range'] + ':' + " &
+    "c.status + ':' + d.status; })()") ==
+    "200:hello\n:yes:206:hell:bytes 0-3/6:304:500"
+
 test "client decodes invalid UTF-8 with replacement":
   check runCode(preamble &
     "const srv = http.serve(18124, req => " &

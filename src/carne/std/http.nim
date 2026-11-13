@@ -18,6 +18,14 @@
 # undefined/null -> 200 empty; anything else -> JSON body. Header
 # values are strings, or arrays of strings for repeated headers
 # (e.g. multiple Set-Cookie); anything else in headers answers 500.
+# Files go out zero-copy: {file: path, attachment?, stream?, headers?}
+# serves path via sendfile (no body buffering, no JS heap copy).
+# attachment: true uses the file's basename, a string names the
+# download. stream: true (1 MB chunks) or a chunk size streams media
+# (206-first). serveFile owns ETag/Last-Modified/Range/304/416 and the
+# bare Content-Type; headers extras pass through except its owned
+# names. HEAD answers the same headers with an empty body
+# (Content-Length reads 0, like every HEAD response in v1).
 # A JS throw in a handler answers 500 and is recorded as uncaught.
 # The object form defaults Content-Type to text/plain for string bodies and
 # application/json for serialized ones unless headers sets one. Bodies
@@ -61,7 +69,7 @@
 # scope in v1): `(async () => { ... })()`. The runtime unwraps a
 # top-level completion promise, so tests assert on it directly.
 
-import std/[json, strutils, tables]
+import std/[json, options, os, strutils, tables, times]
 import std/httpcore except HttpMethod
 
 import javascriptcore
@@ -72,6 +80,7 @@ import powpow/proto/httpclient
 import powpow/proto/httpserver
 from pkg/multipart import MultipartFile, MultipartStreamer, isComplete,
   boundaries, cleanup
+from pkg/mimedb import getMimeType, isExtension
 from powpow/loop import stop, register
 from powpow/net/tls import SslContext, newClientTlsContext
 from powpow/net/common import setNonBlocking
@@ -270,6 +279,23 @@ proc snap(s: string): string =
   result = newString(s.len)
   if s.len > 0:
     copyMem(addr result[0], unsafeAddr s[0], s.len)
+
+proc headerValues(hdrs: var seq[(string, string)]; k: string;
+    v: NimValue): bool =
+  ## Appends one header's value(s): strings once, arrays of strings as
+  ## repeated headers (e.g. multiple Set-Cookie). False on anything else.
+  case v.kind
+  of nvkString:
+    hdrs.add((k, v.s))
+    true
+  of nvkArray:
+    for item in v.arr:
+      if item.kind != nvkString:
+        return false
+      hdrs.add((k, item.s))
+    true
+  else:
+    false
 
 proc fieldOf(name: JSStringRef): int =
   for i in ReqField:
@@ -543,6 +569,155 @@ proc isByteView(ctx: JSContextRef; v: JSValueRef): bool =
   tex == nil and t in {kJSTypedArrayTypeUint8Array,
     kJSTypedArrayTypeUint8ClampedArray, kJSTypedArrayTypeArrayBuffer}
 
+const fileOwnedHeaders = ["content-type", "content-length",
+  "content-range", "connection", "date"]
+  ## serveFile/sendFile/streamFile own these; extras repeating them would
+  ## put invalid duplicates on the wire, so file returns drop them.
+
+proc fileMimeType(path: string): string =
+  ## Bare MIME for the file-serving paths (powpow convention, no charset
+  ## suffix: exactly what sendFile puts on the wire for GET).
+  let ext = splitFile(path).ext
+  if isExtension(ext):
+    let m = getMimeType(ext)
+    if m.isSome:
+      return m.get()
+  "application/octet-stream"
+
+proc dispositionEncode(name: string): string =
+  ## Percent-encodes a filename for RFC 5987 `filename*` (byte-wise over
+  ## the UTF-8 input, attr-char set bare).
+  const attrChars = {'A'..'Z', 'a'..'z', '0'..'9', '!', '#', '$', '&',
+    '+', '-', '.', '^', '_', '`', '|', '~'}
+  for i in 0 ..< name.len:
+    let b = name[i]
+    if b in attrChars:
+      result.add(b)
+    else:
+      result.add('%')
+      result.add("0123456789ABCDEF"[ord(b) shr 4])
+      result.add("0123456789ABCDEF"[ord(b) and 0xF])
+
+proc fileDisposition(name: string): string =
+  ## Content-Disposition for an attachment filename: ASCII goes
+  ## bare-quoted, anything else gains an RFC 5987 `filename*` fallback
+  ## (same shape as the concarne helper, so both paths agree).
+  var plain = name.len > 0
+  for c in name:
+    if ord(c) < 32 or ord(c) > 126 or c == '"' or c == ';' or c == '\\':
+      plain = false
+      break
+  if plain:
+    return "attachment; filename=\"" & name & "\""
+  "attachment; filename=\"download\"; filename*=UTF-8''" &
+    dispositionEncode(name)
+
+proc serveFileReturn(ctx: JSContextRef; req: HttpRequest; res: HttpResponse;
+    ret: JSValueRef; headOnly: bool) =
+  ## Zero-copy file serving for `{file: path, attachment?, stream?, headers?}`.
+  ## GET goes through serveFile (ETag + If-None-Match/If-Modified-Since 304s,
+  ## Range 206s with If-Range handling, 416s) or streamFile (media chunking,
+  ## always 206, capped per response). HEAD answers the same headers with an
+  ## empty body (Content-Length reads 0, like every HEAD response in v1:
+  ## the send path cannot frame a real length without a body). Extras pass
+  ## through except serveFile-owned names; `attachment: true` uses the
+  ## file's basename, a string names the download. Missing files answer 404.
+  var err = ""
+  let aProp = getField(ctx, ret, "attachment", err)
+  if err != "":
+    res.sendError(Http500, "handler attachment is unreadable")
+    return
+  var attachName = ""
+  case aProp.kind
+  of nvkUndefined: discard
+  of nvkBool:
+    if aProp.b:
+      attachName = extractFilename(getField(ctx, ret, "file", err).s)
+  of nvkString:
+    if aProp.s.len > 0:
+      attachName = aProp.s
+  else:
+    res.sendError(Http500, "handler attachment must be a boolean or filename")
+    return
+  var chunk = 0
+  let sProp = getField(ctx, ret, "stream", err)
+  if err != "":
+    res.sendError(Http500, "handler stream is unreadable")
+    return
+  case sProp.kind
+  of nvkUndefined: discard
+  of nvkBool:
+    if sProp.b:
+      chunk = DefaultChunkSize
+  of nvkInt:
+    chunk = int(sProp.i)
+  of nvkFloat:
+    let ci = int(sProp.f)
+    if ci.float != sProp.f or ci <= 0:
+      res.sendError(Http500, "handler stream must be true or a chunk size")
+      return
+    chunk = ci
+  else:
+    res.sendError(Http500, "handler stream must be true or a chunk size")
+    return
+  if chunk < 0 or (sProp.kind != nvkUndefined and chunk == 0 and
+      not (sProp.kind == nvkBool and not sProp.b)):
+    res.sendError(Http500, "handler stream must be true or a chunk size")
+    return
+  var hdrs: seq[(string, string)] = @[]
+  let hProp = getField(ctx, ret, "headers", err)
+  if err != "":
+    res.sendError(Http500, "handler headers are unreadable")
+    return
+  case hProp.kind
+  of nvkUndefined: discard
+  of nvkObject:
+    for k, v in hProp.obj.pairs:
+      if k.toLowerAscii() in fileOwnedHeaders:
+        continue
+      if not headerValues(hdrs, k, v):
+        res.sendError(Http500, "handler header values must be strings")
+        return
+  else:
+    res.sendError(Http500, "handler headers must be an object")
+    return
+  let path = getField(ctx, ret, "file", err).s
+  if headOnly:
+    var size = -1i64
+    var mtime: times.Time
+    try:
+      size = getFileSize(path)
+      mtime = getLastModificationTime(path)
+    except OSError, IOError:
+      discard
+    if size < 0:
+      res.status(Http404)
+        .header("Content-Type", "text/plain; charset=utf-8")
+        .send("File not found")
+      return
+    res.status(Http200)
+    for (k, v) in hdrs:
+      res.header(k, v)
+    res.header("Content-Type", fileMimeType(path))
+      .header("Accept-Ranges", "bytes")
+      .header("ETag", "\"" & $size & "-" & $mtime.toUnix() & "\"")
+      .header("Last-Modified",
+        format(mtime, "ddd, dd MMM yyyy HH:mm:ss") & " GMT")
+    if attachName.len > 0:
+      res.header("Content-Disposition", fileDisposition(attachName))
+    res.send("")
+    return
+  for (k, v) in hdrs:
+    res.header(k, v)
+  if attachName.len > 0:
+    res.header("Content-Disposition", fileDisposition(attachName))
+  if chunk > 0:
+    res.streamFile(path, req, chunk)
+  elif not res.serveFile(req, path):
+    res.status(Http404)
+      .header("Content-Type", "text/plain; charset=utf-8")
+      .send("File not found")
+
 proc serveBinary(ctx: JSContextRef; res: HttpResponse; ret, bodyProp: JSValueRef;
     headOnly: bool) =
   ## Serves a {status?, headers?, body: Uint8Array} handler return.
@@ -574,16 +749,7 @@ proc serveBinary(ctx: JSContextRef; res: HttpResponse; ret, bodyProp: JSValueRef
   of nvkUndefined: discard
   of nvkObject:
     for k, v in h.obj.pairs:
-      case v.kind
-      of nvkString:
-        hdrs.add((k, v.s))
-      of nvkArray:
-        for item in v.arr:
-          if item.kind != nvkString:
-            res.sendError(Http500, "handler header values must be strings")
-            return
-          hdrs.add((k, item.s))
-      else:
+      if not headerValues(hdrs, k, v):
         res.sendError(Http500, "handler header values must be strings")
         return
   else:
@@ -668,6 +834,18 @@ proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
         .header("Content-Type", "text/plain; charset=utf-8")
         .send(if headOnly: "" else: valueToString(c, ret))
       return
+    # Zero-copy file serving: {file: path, ...} answers from disk via
+    # sendfile, owning Content-Type/Length/Range/ETag itself. A present
+    # but malformed `file` is a 500, like any malformed return part.
+    var ferr = ""
+    let fProp = getField(c, ret, "file", ferr)
+    if ferr == "":
+      if fProp.kind == nvkString and fProp.s.len > 0:
+        serveFileReturn(c, req, res, ret, headOnly)
+        return
+      elif fProp.kind != nvkUndefined:
+        res.sendError(Http500, "handler file must be a path string")
+        return
     # Binary fast path: {status?, headers?, body: Uint8Array}. jsToJson
     # would walk a typed array per byte (tripping the snapshot cap on
     # large files), so probe the live body ref first; anything else
