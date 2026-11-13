@@ -1,5 +1,7 @@
 import unittest
 
+import std/os
+
 import carne
 import carne/modules
 import carne/std/gettext
@@ -81,3 +83,34 @@ test "gettext mo missing file throws":
   expect CarneError:
     discard runCode(
       "require('std/gettext').parseMoFile('tests/fixtures/nope.mo')")
+
+const jsPoCtx = """'msgid ""\nmsgstr ""\n"Project-Id-Version: t\\n"\n""" &
+  """"Language: fr\\n"\n"Plural-Forms: nplurals=2; plural=(n > 1);\\n"\n\n""" &
+  """msgctxt "menu"\nmsgid "file"\nmsgid_plural "files"\n""" &
+  """msgstr[0] "fichier"\nmsgstr[1] "fichiers"\n\n""" &
+  """msgctxt "menu"\nmsgid "Open"\nmsgstr "Ouvrir"\n'"""
+
+test "gettext ntranslate takes msgctxt":
+  check runCode("require('std/gettext').ntranslate(" & jsPoCtx &
+    ", 'file', 'files', 1, 'menu')") == "fichier"
+  check runCode("require('std/gettext').ntranslate(" & jsPoCtx &
+    ", 'file', 'files', 5, 'menu')") == "fichiers"
+  check runCode("require('std/gettext').ntranslate(" & jsPoCtx &
+    ", 'file', 'files', 5)") == "files"
+
+test "gettext writeMo roundtrips and ntranslateMo takes msgctxt":
+  let moPath = getTempDir() / "carne_gettext_ctx.mo"
+  discard runCode("require('std/gettext').writeMo(" & jsPoCtx &
+    ", '" & moPath & "')")
+  check runCode("require('std/gettext').ntranslateMo('" & moPath &
+    "', 'file', 'files', 1, 'menu')") == "fichier"
+  check runCode("require('std/gettext').ntranslateMo('" & moPath &
+    "', 'file', 'files', 5, 'menu')") == "fichiers"
+  check runCode("require('std/gettext').translateMo('" & moPath &
+    "', 'Open', 'menu')") == "Ouvrir"
+  removeFile(moPath)
+
+test "gettext writeMo error throws":
+  expect CarneError:
+    discard runCode(
+      "require('std/gettext').writeMo('msgid \"unterminated', 'x.mo')")

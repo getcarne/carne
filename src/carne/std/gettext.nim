@@ -4,7 +4,11 @@
 #   gettext.parse(text)
 #     -> {headers: {...}, entries: [{msgid, msgstr: [...], ...}]}
 #   gettext.translate(text, msgid[, msgctxt]) -> translated string
-#   gettext.ntranslate(text, singular, plural, n) -> plural form
+#   gettext.ntranslate(text, singular, plural, n[, msgctxt]) -> plural form
+#   gettext.parseMoFile(path) -> {headers, entries}
+#   gettext.translateMo(path, msgid[, msgctxt]) -> translated string
+#   gettext.ntranslateMo(path, singular, plural, n[, msgctxt]) -> plural form
+#   gettext.writeMo(text, path) -> compiles .po text to a .mo file
 #
 # Entries carry msgid, msgstr[], and msgidPlural/msgctxt/fuzzy only when
 # present. Obsolete entries are skipped; untranslated ids fall back to
@@ -202,14 +206,14 @@ init proc(module: Module) =
         nil
 
     module.registerFn ntranslate(text: string, singular: string,
-        plural: string, n: int64):
-      ## gettext.ntranslate(text, singular, plural, n) -> string
+        plural: string, n: int64, msgctxt ?: string):
+      ## gettext.ntranslate(text, singular, plural, n[, msgctxt]) -> string
       var tmp = ""
       var cat: PoCatalog
       if not openTemp(text, "ntranslate", ctx, exception, tmp, cat, docBlock):
         return nil
       try:
-        let s = ntranslate(compilePo(cat), singular, plural, int(n))
+        let s = ntranslate(compilePo(cat), singular, plural, int(n), msgctxt)
         closeTemp(tmp, cat)
         toJS(ctx, s)
       except CatchableError as e:
@@ -279,16 +283,31 @@ init proc(module: Module) =
         nil
 
     module.registerFn ntranslateMo(path: string, singular: string,
-        plural: string, n: int64):
-      ## gettext.ntranslateMo(path, singular, plural, n) -> string
+        plural: string, n: int64, msgctxt ?: string):
+      ## gettext.ntranslateMo(path, singular, plural, n[, msgctxt]) -> string
       var cat: MoCatalog
       if not openMo(path, "ntranslateMo", ctx, exception, cat, docBlock):
         return nil
       try:
-        let s = ntranslate(compileMo(cat), singular, plural, int(n))
+        let s = ntranslate(compileMo(cat), singular, plural, int(n), msgctxt)
         close(cat)
         toJS(ctx, s)
       except CatchableError as e:
         close(cat)
         throwError(ctx, "ntranslateMo: " & e.msg, exception)
         nil
+
+    module.registerFn writeMo(text: string, path: string):
+      ## gettext.writeMo(text, path) -> undefined
+      var tmp = ""
+      var cat: PoCatalog
+      if not openTemp(text, "writeMo", ctx, exception, tmp, cat, docBlock):
+        return nil
+      try:
+        writeMoFile(compilePo(cat), path)
+        closeTemp(tmp, cat)
+      except CatchableError as e:
+        closeTemp(tmp, cat)
+        throwError(ctx, "writeMo: " & e.msg, exception)
+        return nil
+      JSValueMakeUndefined(ctx)
