@@ -200,11 +200,11 @@
 <div id="ensurePkgSource-procs-all">
   <div id="ensurePkgSource,DatpkgrConfig">
   <dt><pre><span class="Keyword">proc</span> <a href="#ensurePkgSource%2CDatpkgrConfig"><span class="Identifier">ensurePkgSource</span></a><span class="Other">(</span><span class="Identifier">cfg</span><span class="Other">:</span> <span class="Identifier">DatpkgrConfig</span><span class="Other">)</span> {.
-    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">StorageError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">]</span><span class="Other">,</span>
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">Exception</span><span class="Other">,</span> <span class="Identifier">StorageError</span><span class="Other">,</span> <span class="Identifier">KeyError</span><span class="Other">,</span> <span class="Identifier">IOError</span><span class="Other">]</span><span class="Other">,</span>
     <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">WriteIOEffect</span><span class="Other">,</span> <span class="Identifier">RootEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    <p>Make sure the carne registry source is registered. Fresh homes get it from datpkgr's own defaults; homes created before the registry existed carry a sourceless sources.json that <tt class="docutils literal"><span class="pre"><span class="Identifier">ensureSourcesFile</span></span></tt> never upgrades (it only writes when missing), so add it here.</p>
+    <p>Make sure the carne registry source is registered at the current default URL. Fresh homes get it from datpkgr's own defaults; homes created before the registry existed carry a sourceless sources.json that <tt class="docutils literal"><span class="pre"><span class="Identifier">ensureSourcesFile</span></span></tt> never upgrades (it only writes when missing), so add it here. Homes created between registry moves carry a stale URL (openpeeps/carnepkgs, carne/pkgs, ...) that 404s on refresh, so heal those to the default too - the <tt class="docutils literal"><span class="pre"><span class="Identifier">carne</span></span></tt>-named source is owned by the binary, custom mirrors live under their own names and pass through untouched.</p>
 <p>NB: consult the raw file, not <tt class="docutils literal"><span class="pre"><span class="Identifier">loadSources</span></span></tt> - its fallback fabricates a usable-looking entry named <tt class="docutils literal"><span class="pre"><span class="Identifier">defaultSourceName</span></span></tt> when the file yields nothing, which is indistinguishable from a registered source.</p>
 
     
@@ -358,7 +358,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-11-12 19:41:59 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-11-13 12:12:08 UTC</small>
       </div>
     </div>
   </div>
