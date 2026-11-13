@@ -129,9 +129,27 @@ proc requirePkg(ctx: JSContextRef; rt: Runtime; spec: string;
   if at >= 0:
     name = head[0 ..< at]
     ver = head[at + 1 .. ^1]
-  if name.len == 0 or name == "." or name == "..":
+  if name.len == 0 or name == "." or name == ".." or '\0' in name or
+      '\\' in name:
     throwError(ctx, "require: unknown module \"" & spec & "\"", exception)
     return nil
+  # Fail closed on malformed pins: an empty or dot-only version would
+  # otherwise silently fall back to the latest installed version, and
+  # a second `@` makes the pin ambiguous.
+  if at >= 0 and (ver.len == 0 or ver == "." or ver == ".." or
+      '@' in ver or '\\' in ver or '\0' in ver):
+    throwError(ctx, "require: invalid package version in \"" & spec & "\"",
+      exception)
+    return nil
+  # Any `..` segment in the subpath is rejected outright, even one
+  # that would stay inside the package: `pkg/<name>/sub/...` never
+  # leaves the package root. The resolver re-checks this plus
+  # symlink containment (defense in depth).
+  for seg in rest.split('/'):
+    if seg == ".." or '\0' in seg:
+      throwError(ctx, "require: invalid package path \"" & spec & "\"",
+        exception)
+      return nil
   # Resolve under the process-wide lock: the store underneath is not
   # thread-safe and http workers resolve concurrently. Only the lookup
   # is serialized — loading and running the module stays per-runtime.

@@ -110,6 +110,82 @@ test "require pkg pins @version":
   discard setupFixtures(home)
   check runCode("require('pkg/greet@0.1.0').who()") == "greet-0.1.0+u1"
 
+test "pkg subpath traversal throws":
+  let home = freshHome()
+  defer: removeDir(home)
+  discard setupFixtures(home)
+  for spec in ["pkg/greet/sub/../../../etc/hosts",
+      "pkg/greet/../greet",
+      "pkg/greet@0.1.0/../../etc/hosts",
+      "pkg/expkg/sub/../extra",
+      "pkg/greet@",
+      "pkg/greet@.."]:
+    expect CarneError:
+      discard runCode("require('" & spec & "')")
+
+proc setupLinkFixtures(home: string): DatpkgrConfig =
+  # Develop checkouts keep symlinks live (registry installs copy file
+  # contents instead), so symlink escapes are modelled with
+  # `developPackage` - the editable path `resolveInstalledPath`
+  # prefers.
+  result = newCarnePkgConfig(rootPath = home)
+  let outside = home / "outside-marker.js"
+  writeFile(outside, "module.exports = { tag: () => \"pwned\" };\n")
+  let checkout = home / "checkout-linkpkg"
+  createDir(checkout / "lib")
+  writeFile(checkout / "package.json",
+    """{"name": "linkpkg", "version": "1.0.0", "main": "index.js"}""")
+  writeFile(checkout / "index.js",
+    "module.exports = { tag: () => \"ok\" };\n")
+  writeFile(checkout / "real.js",
+    "module.exports = { tag: () => \"real\" };\n")
+  createSymlink(checkout / "real.js", checkout / "alias.js")
+  createSymlink(outside, checkout / "evil.js")
+  createSymlink(home, checkout / "lib" / "out")
+  check result.developPackage(checkout)
+  let root = result.resolveInstalledPath("linkpkg", "")
+  check root.len > 0
+  # The checkout must carry live symlinks for this test to mean anything.
+  check symlinkExists(checkout / "evil.js")
+  check symlinkExists(checkout / "alias.js")
+  check symlinkExists(checkout / "lib" / "out")
+  initPkgLoader(result)
+
+test "pkg symlinks resolve inside, escapes throw":
+  let home = freshHome()
+  defer: removeDir(home)
+  discard setupLinkFixtures(home)
+  check runCode("require('pkg/linkpkg').tag()") == "ok"
+  check runCode("require('pkg/linkpkg/alias').tag()") == "real"
+  expect CarneError:
+    discard runCode("require('pkg/linkpkg/evil')")
+  expect CarneError:
+    discard runCode("require('pkg/linkpkg/lib/out/outside-marker')")
+
+test "pkg entry point escapes throw":
+  let home = freshHome()
+  defer: removeDir(home)
+  var cfg = newCarnePkgConfig(rootPath = home)
+  let outside = home / "outside.js"
+  writeFile(outside, "module.exports = { tag: () => \"pwned\" };\n")
+  let checkoutEscape = home / "checkout-escape"
+  createDir(checkoutEscape)
+  writeFile(checkoutEscape / "package.json",
+    """{"name": "escape", "version": "1.0.0", "main": "../outside.js"}""")
+  check cfg.developPackage(checkoutEscape)
+  let checkoutEntry = home / "checkout-entrylink"
+  createDir(checkoutEntry)
+  writeFile(checkoutEntry / "package.json",
+    """{"name": "entrylink", "version": "1.0.0", "main": "index.js"}""")
+  createSymlink(outside, checkoutEntry / "index.js")
+  check cfg.developPackage(checkoutEntry)
+  check symlinkExists(checkoutEntry / "index.js")
+  initPkgLoader(cfg)
+  expect CarneError:
+    discard runCode("require('pkg/escape')")
+  expect CarneError:
+    discard runCode("require('pkg/entrylink')")
+
 test "require pkg honors exports map and subpaths":
   let home = freshHome()
   defer: removeDir(home)

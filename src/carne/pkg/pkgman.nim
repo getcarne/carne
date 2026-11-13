@@ -223,45 +223,77 @@ proc pkgList*(cfg: DatpkgrConfig) =
         line.add("  " & rec.path)
       echo line
 
-proc firstExisting(paths: varargs[string]): string =
-  for p in paths:
-    if p.len > 0 and fileExists(p):
-      return p
+proc insidePkgRoot*(root, candidate: string): bool =
+  ## True when `candidate` resolves inside `root`. Both sides go through
+  ## `realpath`, so symlinks at any level (a `link.js -> /etc/passwd`
+  ## file, a `lib -> /tmp/evil` dir on the path, an entry point
+  ## pointing out) fail closed. Non-existent paths fail closed too.
+  try:
+    let r = expandFilename(root)
+    let p = expandFilename(candidate)
+    p == r or p.startsWith(r & DirSep)
+  except OSError:
+    false
+
+proc entryTargetOk(target: string): string =
+  ## A manifest `main`/`exports` value reduced to an in-package
+  ## relative path, "" when it escapes. Strips the `./` prefix Node
+  ## allows, then rejects absolute paths and anything normalizing up
+  ## past the package root (`../x`, `a/../../x`).
+  var p = target
+  while p.startsWith("./"):
+    p = p[2 .. ^1]
+  if p.len == 0 or p.isAbsolute:
+    return ""
+  let n = normalizedPath(p)
+  if n == ".." or n.startsWith(".." & DirSep):
+    return ""
+  n
+
+proc containedHit(root, path: string): string =
+  ## `path` when it is a real file inside `root`, "" otherwise.
+  if path.len > 0 and fileExists(path) and insidePkgRoot(root, path):
+    return path
   ""
 
 proc packageEntryPoint*(cfg: DatpkgrConfig, root, name: string): string =
   ## Absolute path of a package's entry file: the `exports` map root
   ## (Node parity: it wins over `main`), then manifest `main`, then
   ## `index.js`, `src/index.js`, `<name>.js` - first hit wins,
-  ## "" when nothing exists.
+  ## "" when nothing exists. Manifest targets that escape the package
+  ## (`../`, absolute) and hits resolving outside the root via
+  ## symlinks are skipped, never returned.
   let mf = cfg.findManifestInDir(root)
   if mf.len > 0:
     try:
       let m = cfg.parseManifest(readFile(mf), mf)
-      let exp = m.manifestExportsEntry()
+      let exp = entryTargetOk(m.manifestExportsEntry())
       if exp.len > 0:
-        var p = exp
-        while p.startsWith("./"):
-          p = p[2 .. ^1]
-        if not p.startsWith("..") and not p.isAbsolute:
-          let hit = firstExisting(root / p)
-          if hit.len > 0:
-            return hit
-      let main = m.manifestMain()
+        let hit = containedHit(root, root / exp)
+        if hit.len > 0:
+          return hit
+      let main = entryTargetOk(m.manifestMain())
       if main.len > 0:
-        let hit = firstExisting(root / main)
+        let hit = containedHit(root, root / main)
         if hit.len > 0:
           return hit
     except CatchableError:
       discard
-  firstExisting(root / "index.js", root / "src" / "index.js",
-    root / name & ".js")
+  for cand in [root / "index.js", root / "src" / "index.js",
+      root / name & ".js"]:
+    let hit = containedHit(root, cand)
+    if hit.len > 0:
+      return hit
+  ""
 
 proc resolvePkgImport*(cfg: DatpkgrConfig,
     spec: string; preferRef = ""): Option[string] =
   ## Map `pkg/<name>` (or `pkg/<name>/sub/path`) to an absolute script
   ## path, none when unresolvable. Develop checkouts win automatically
-  ## via `resolveInstalledPath`. `..` escapes are rejected. `preferRef`
+  ## via `resolveInstalledPath`. Any `..` segment in the subpath is
+  ## rejected outright (fail closed, even when it would stay inside),
+  ## and every hit is verified to resolve inside the package root, so
+  ## symlinks pointing out can never be returned. `preferRef`
   ## pins an exact installed version/ref instead of the default pick.
   const prefix = "pkg/"
   if not spec.startsWith(prefix):
@@ -274,6 +306,9 @@ proc resolvePkgImport*(cfg: DatpkgrConfig,
   let rest = if slash < 0: "" else: tail[slash + 1 .. ^1]
   if name.len == 0 or name == "." or name == "..":
     return none(string)
+  for seg in rest.split('/'):
+    if seg == "..":
+      return none(string)
   let root = cfg.resolveInstalledPath(name, preferRef)
   if root.len == 0 or not dirExists(root):
     return none(string)
@@ -286,10 +321,11 @@ proc resolvePkgImport*(cfg: DatpkgrConfig,
   if joined != root and not joined.startsWith(root & DirSep):
     return none(string)
   if splitFile(joined).ext.len > 0:
-    if fileExists(joined):
-      return some(joined)
+    let hit = containedHit(root, joined)
+    if hit.len > 0:
+      return some(hit)
     return none(string)
-  let hit = firstExisting(joined & ".js")
+  let hit = containedHit(root, joined & ".js")
   if hit.len > 0:
     return some(hit)
   none(string)
