@@ -239,6 +239,15 @@ test "handler Uint8Array body rejects bad status and headers":
     "http.close(srv.port); " &
     "return a.status + ':' + b.status; })()") == "500:500"
 
+test "handler array header values send repeated headers":
+  check runCode(preamble &
+    "const srv = http.serve(18125, req => " &
+    "({headers: {'X-Multi': ['a', 'b'], 'X-Single': 's'}, body: 'x'})); " &
+    "const res = await http.fetch('http://127.0.0.1:18125/'); " &
+    "http.close(srv.port); " &
+    "return res.status + ':' + res.headers['x-multi'] + ':' + " &
+    "res.headers['x-single']; })()") == "200:b:s"
+
 test "client decodes invalid UTF-8 with replacement":
   check runCode(preamble &
     "const srv = http.serve(18124, req => " &

@@ -15,10 +15,12 @@
 # Handler return: string -> 200 text/plain; {status?, headers?, body?};
 # body is a string, a Uint8Array (binary, Content-Type defaults to
 # application/octet-stream), or anything else (JSON-serialized);
-# undefined/null -> 200 empty; anything else -> JSON body. The object
-# form defaults Content-Type to text/plain for string bodies and
-# application/json for serialized ones unless headers sets one. A JS
-# throw in a handler answers 500 and is recorded as uncaught. Bodies
+# undefined/null -> 200 empty; anything else -> JSON body. Header
+# values are strings, or arrays of strings for repeated headers
+# (e.g. multiple Set-Cookie); anything else in headers answers 500.
+# A JS throw in a handler answers 500 and is recorded as uncaught.
+# The object form defaults Content-Type to text/plain for string bodies and
+# application/json for serialized ones unless headers sets one. Bodies
 # are UTF-8 strings in v1; https uses a default client context with
 # system CAs. Header names are lowercased in req.headers and
 # res.headers (read them lowercase); handler-set response headers keep
@@ -506,10 +508,18 @@ proc serveBinary(ctx: JSContextRef; res: HttpResponse; ret, bodyProp: JSValueRef
   of nvkUndefined: discard
   of nvkObject:
     for k, v in h.obj.pairs:
-      if v.kind != nvkString:
+      case v.kind
+      of nvkString:
+        hdrs.add((k, v.s))
+      of nvkArray:
+        for item in v.arr:
+          if item.kind != nvkString:
+            res.sendError(Http500, "handler header values must be strings")
+            return
+          hdrs.add((k, item.s))
+      else:
         res.sendError(Http500, "handler header values must be strings")
         return
-      hdrs.add((k, v.s))
   else:
     res.sendError(Http500, "handler headers must be an object")
     return
@@ -616,10 +626,18 @@ proc httpOnRequest(req: HttpRequest; res: HttpResponse) {.gcsafe.} =
         res.sendError(Http500, "handler headers must be an object")
         return
       for k, v in h.pairs:
-        if v.kind != JString:
+        case v.kind
+        of JString:
+          hdrs.add((k, v.getStr()))
+        of JArray:
+          for item in v.items:
+            if item.kind != JString:
+              res.sendError(Http500, "handler header values must be strings")
+              return
+            hdrs.add((k, item.getStr()))
+        else:
           res.sendError(Http500, "handler header values must be strings")
           return
-        hdrs.add((k, v.getStr()))
     var body = ""
     var bodyIsJson = false
     if node.hasKey("body"):
