@@ -89,6 +89,10 @@
   <li><a class="reference" href="#ensurePkgSource%2CDatpkgrConfig" title="ensurePkgSource(cfg: DatpkgrConfig)">ensurePkgSource(cfg: DatpkgrConfig)</a></li>
 
 </ul>
+<ul class="simple nested-toc-section">insidePkgRoot
+  <li><a class="reference" href="#insidePkgRoot%2Cstring%2Cstring" title="insidePkgRoot(root, candidate: string): bool">insidePkgRoot(root, candidate: string): bool</a></li>
+
+</ul>
 <ul class="simple nested-toc-section">newCarnePkgConfig
   <li><a class="reference" href="#newCarnePkgConfig%2Cstring" title="newCarnePkgConfig(rootPath = &quot;&quot;; debug = false; ensureSource = true): DatpkgrConfig">newCarnePkgConfig(rootPath = &quot;&quot;; debug = false; ensureSource = true): DatpkgrConfig</a></li>
 
@@ -212,6 +216,18 @@
 </div>
 
 </div>
+<div id="insidePkgRoot-procs-all">
+  <div id="insidePkgRoot,string,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#insidePkgRoot%2Cstring%2Cstring"><span class="Identifier">insidePkgRoot</span></a><span class="Other">(</span><span class="Identifier">root</span><span class="Other">,</span> <span class="Identifier">candidate</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">bool</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">ReadDirEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    True when <tt class="docutils literal"><span class="pre"><span class="Identifier">candidate</span></span></tt> resolves inside <tt class="docutils literal"><span class="pre"><span class="Identifier">root</span></span></tt>. Both sides go through <tt class="docutils literal"><span class="pre"><span class="Identifier">realpath</span></span></tt>, so symlinks at any level (a <tt class="docutils literal"><span class="pre"><span class="Identifier">link</span><span class="Operator">.</span><span class="Identifier">js</span> <span class="Operator">-&gt;</span> <span class="Operator">/</span><span class="Identifier">etc</span><span class="Operator">/</span><span class="Identifier">passwd</span></span></tt> file, a <tt class="docutils literal"><span class="pre"><span class="Identifier">lib</span> <span class="Operator">-&gt;</span> <span class="Operator">/</span><span class="Identifier">tmp</span><span class="Operator">/</span><span class="Identifier">evil</span></span></tt> dir on the path, an entry point pointing out) fail closed. Non-existent paths fail closed too.
+    
+  </dd>
+</div>
+
+</div>
 <div id="newCarnePkgConfig-procs-all">
   <div id="newCarnePkgConfig,string">
   <dt><pre><span class="Keyword">proc</span> <a href="#newCarnePkgConfig%2Cstring"><span class="Identifier">newCarnePkgConfig</span></a><span class="Other">(</span><span class="Identifier">rootPath</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">;</span> <span class="Identifier">debug</span> <span class="Other">=</span> <span class="Identifier">false</span><span class="Other">;</span> <span class="Identifier">ensureSource</span> <span class="Other">=</span> <span class="Identifier">true</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">DatpkgrConfig</span> {.
@@ -233,7 +249,7 @@
     <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Identifier">RootEffect</span><span class="Other">,</span> <span class="Identifier">ReadDirEffect</span><span class="Other">,</span> <span class="Identifier">ReadIOEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Absolute path of a package's entry file: the <tt class="docutils literal"><span class="pre"><span class="Identifier">exports</span></span></tt> map root (Node parity: it wins over <tt class="docutils literal"><span class="pre"><span class="Identifier">main</span></span></tt>), then manifest <tt class="docutils literal"><span class="pre"><span class="Identifier">main</span></span></tt>, then <tt class="docutils literal"><span class="pre"><span class="Identifier">index</span><span class="Operator">.</span><span class="Identifier">js</span></span></tt>, <tt class="docutils literal"><span class="pre"><span class="Identifier">src</span><span class="Operator">/</span><span class="Identifier">index</span><span class="Operator">.</span><span class="Identifier">js</span></span></tt>, <tt class="docutils literal"><span class="pre"><span class="Operator">&lt;</span><span class="Identifier">name</span><span class="Operator">&gt;.</span><span class="Identifier">js</span></span></tt> - first hit wins, &quot;&quot; when nothing exists.
+    Absolute path of a package's entry file: the <tt class="docutils literal"><span class="pre"><span class="Identifier">exports</span></span></tt> map root (Node parity: it wins over <tt class="docutils literal"><span class="pre"><span class="Identifier">main</span></span></tt>), then manifest <tt class="docutils literal"><span class="pre"><span class="Identifier">main</span></span></tt>, then <tt class="docutils literal"><span class="pre"><span class="Identifier">index</span><span class="Operator">.</span><span class="Identifier">js</span></span></tt>, <tt class="docutils literal"><span class="pre"><span class="Identifier">src</span><span class="Operator">/</span><span class="Identifier">index</span><span class="Operator">.</span><span class="Identifier">js</span></span></tt>, <tt class="docutils literal"><span class="pre"><span class="Operator">&lt;</span><span class="Identifier">name</span><span class="Operator">&gt;.</span><span class="Identifier">js</span></span></tt> - first hit wins, &quot;&quot; when nothing exists. Manifest targets that escape the package (<tt class="docutils literal"><span class="pre"><span class="Operator">../</span></span></tt>, absolute) and hits resolving outside the root via symlinks are skipped, never returned.
     
   </dd>
 </div>
@@ -336,7 +352,7 @@
                                         <span class="Identifier">ReadIOEffect</span><span class="Other">,</span> <span class="Identifier">TimeEffect</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Map <tt class="docutils literal"><span class="pre"><span class="Identifier">pkg</span><span class="Operator">/&lt;</span><span class="Identifier">name</span><span class="Operator">&gt;</span></span></tt> (or <tt class="docutils literal"><span class="pre"><span class="Identifier">pkg</span><span class="Operator">/&lt;</span><span class="Identifier">name</span><span class="Operator">&gt;/</span><span class="Identifier">sub</span><span class="Operator">/</span><span class="Identifier">path</span></span></tt>) to an absolute script path, none when unresolvable. Develop checkouts win automatically via <tt class="docutils literal"><span class="pre"><span class="Identifier">resolveInstalledPath</span></span></tt>. <tt class="docutils literal"><span class="pre"><span class="Operator">..</span></span></tt> escapes are rejected. <tt class="docutils literal"><span class="pre"><span class="Identifier">preferRef</span></span></tt> pins an exact installed version/ref instead of the default pick.
+    Map <tt class="docutils literal"><span class="pre"><span class="Identifier">pkg</span><span class="Operator">/&lt;</span><span class="Identifier">name</span><span class="Operator">&gt;</span></span></tt> (or <tt class="docutils literal"><span class="pre"><span class="Identifier">pkg</span><span class="Operator">/&lt;</span><span class="Identifier">name</span><span class="Operator">&gt;/</span><span class="Identifier">sub</span><span class="Operator">/</span><span class="Identifier">path</span></span></tt>) to an absolute script path, none when unresolvable. Develop checkouts win automatically via <tt class="docutils literal"><span class="pre"><span class="Identifier">resolveInstalledPath</span></span></tt>. Any <tt class="docutils literal"><span class="pre"><span class="Operator">..</span></span></tt> segment in the subpath is rejected outright (fail closed, even when it would stay inside), and every hit is verified to resolve inside the package root, so symlinks pointing out can never be returned. <tt class="docutils literal"><span class="pre"><span class="Identifier">preferRef</span></span></tt> pins an exact installed version/ref instead of the default pick.
     
   </dd>
 </div>
@@ -358,7 +374,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-11-13 12:12:08 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-11-13 17:42:33 UTC</small>
       </div>
     </div>
   </div>

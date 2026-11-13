@@ -11,5 +11,6 @@ nim	pkgUpdate	carne/pkg/pkgman.html#pkgUpdate,DatpkgrConfig,string	proc pkgUpdat
 nim	pkgDevelop	carne/pkg/pkgman.html#pkgDevelop,DatpkgrConfig,string	proc pkgDevelop(cfg: DatpkgrConfig; dir: string): bool		192
 nim	pkgPrune	carne/pkg/pkgman.html#pkgPrune,DatpkgrConfig	proc pkgPrune(cfg: DatpkgrConfig)		197
 nim	pkgList	carne/pkg/pkgman.html#pkgList,DatpkgrConfig	proc pkgList(cfg: DatpkgrConfig)		201
-nim	packageEntryPoint	carne/pkg/pkgman.html#packageEntryPoint,DatpkgrConfig,string,string	proc packageEntryPoint(cfg: DatpkgrConfig; root, name: string): string		232
-nim	resolvePkgImport	carne/pkg/pkgman.html#resolvePkgImport,DatpkgrConfig,string,string	proc resolvePkgImport(cfg: DatpkgrConfig; spec: string; preferRef = ""): Option[\n    string]		260
+nim	insidePkgRoot	carne/pkg/pkgman.html#insidePkgRoot,string,string	proc insidePkgRoot(root, candidate: string): bool		226
+nim	packageEntryPoint	carne/pkg/pkgman.html#packageEntryPoint,DatpkgrConfig,string,string	proc packageEntryPoint(cfg: DatpkgrConfig; root, name: string): string		259
+nim	resolvePkgImport	carne/pkg/pkgman.html#resolvePkgImport,DatpkgrConfig,string,string	proc resolvePkgImport(cfg: DatpkgrConfig; spec: string; preferRef = ""): Option[\n    string]		289

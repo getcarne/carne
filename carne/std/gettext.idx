@@ -1,2 +1,2 @@
 nimTitle	gettext	carne/std/gettext.html	module carne/std/gettext		0
-nim	install	carne/std/gettext.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		136
+nim	install	carne/std/gettext.html#install,JSContextRef,Runtime	proc install(ctx: JSContextRef; rt: Runtime): JSObjectRef		197
