@@ -386,10 +386,25 @@ proc renderNode(src: string, idx: int, nodes: seq[SpanTree],
         ": `export =` is not allowed in namespaces")
     let inner = renderSlice(src, s.span.a, s.span.b,
       nodes[idx].kids, nodes, starts, nsPath, path, assigns)
-    # The slice starts with `export`: find the `=` at depth 0.
+    # The slice starts with `export`: find the `=` at depth 0,
+    # skipping whitespace and comments.
     var p = 6
-    while p < inner.text.len and inner.text[p] in {' ', '\t', '\r', '\n'}:
-      inc p
+    while p < inner.text.len:
+      if inner.text[p] in {' ', '\t', '\r', '\n'}:
+        inc p
+      elif inner.text[p] == '/' and p + 1 < inner.text.len and
+          inner.text[p + 1] == '/':
+        while p < inner.text.len and inner.text[p] != '\n':
+          inc p
+      elif inner.text[p] == '/' and p + 1 < inner.text.len and
+          inner.text[p + 1] == '*':
+        inc p, 2
+        while p + 1 < inner.text.len and
+            not (inner.text[p] == '*' and inner.text[p + 1] == '/'):
+          inc p
+        inc p, 2
+      else:
+        break
     if p >= inner.text.len or inner.text[p] != '=':
       raise newException(CarneError, path & ":" & $kwLine &
         ": malformed `export =` (internal error)")

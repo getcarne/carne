@@ -217,6 +217,21 @@ suite "ts run and stack traces":
       check "t.ts" in e.msg
       check "1:" in e.msg
 
+  test "namespace edge cases":
+    # Type-only members vanish with their export keyword.
+    check tx("namespace N { export interface I { x: string; } }").strip() ==
+      "var N;(function(N){\n" & " ".repeat(35) & "\n})(N=N||({}));"
+    # Nested namespaces and export lists.
+    let n = tx("namespace A.B { export const x = 1; export { x as y }; }")
+    check "A.B.y" notin n
+    check runCode(n & "\nA.B.y;") == "1"
+    # Empty enum and namespace bodies lower cleanly.
+    check runCode(tx("enum E {} Object.keys(E).length;")) == "0"
+    check runCode(tx("namespace N {} typeof N;")) == "object"
+    # Comments around export-eq survive structurally.
+    check runCode("(function(module) { " & tx("export /*c*/ = 40 + 2;") &
+      " return module.exports; })({});") == "42"
+
   test "async errors map too":
     try:
       discard runCode("setTimeout(() => { throw new Error(\"timer-boom\"); }, 5);", "t.ts")
