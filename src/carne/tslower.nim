@@ -209,7 +209,8 @@ proc qualifyEnumInit(slice, enumName: string,
       elif c == '`':
         result.add(c)
         inc k
-        while k < slice.len:
+        var tplDepth = 1
+        while k < slice.len and tplDepth > 0:
           if slice[k] == '\\' and k + 1 < slice.len:
             result.add(slice[k])
             result.add(slice[k + 1])
@@ -220,8 +221,16 @@ proc qualifyEnumInit(slice, enumName: string,
             k += 2
             let innerStart = k
             var braceDepth = 1
+            var inStr = '\0'
             while k < slice.len and braceDepth > 0:
-              if slice[k] == '{':
+              if inStr != '\0':
+                if slice[k] == '\\' and k + 1 < slice.len:
+                  inc k
+                elif slice[k] == inStr:
+                  inStr = '\0'
+              elif slice[k] == '"' or slice[k] == '\'' or slice[k] == '`':
+                inStr = slice[k]
+              elif slice[k] == '{':
                 inc braceDepth
               elif slice[k] == '}':
                 dec braceDepth
@@ -233,7 +242,7 @@ proc qualifyEnumInit(slice, enumName: string,
           elif slice[k] == '`':
             result.add(slice[k])
             inc k
-            break
+            dec tplDepth
           else:
             result.add(slice[k])
             inc k
@@ -342,9 +351,9 @@ proc renderNode(src: string, idx: int, nodes: seq[SpanTree],
         haveLast = false
         if m.initKind == ikStr:
           numeric = false
-        initText = cleanInits[i]
-        if m.initKind == ikExpr:
-          initText = qualifyEnumInit(initText, s.text, priors)
+        # Qualify is a no-op on plain strings; template `${}` members
+        # need it since templates lex as string literals.
+        initText = qualifyEnumInit(cleanInits[i], s.text, priors)
       started = true
       if not m.strName:
         priors.add(m.name)

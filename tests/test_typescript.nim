@@ -117,6 +117,7 @@ suite "ts runtime":
     check runCode(tx("const enum F { P, Q = 5 }; F.P + F.Q;")) == "5"
     check runCode(tx("enum C { A = 1 + 2, B = A * 2 }; C.A + C.B;")) == "9"
     check runCode(tx("enum N { A = \"a\" }; N[\"A\"];")) == "a"
+    check runCode(tx("enum E { B = 1, A = `x${B}y` }; E.A;")) == "x1y"
 
   test "namespaces run":
     check runCode(tx("namespace N { export const x: number = 1; export function f(): number { return x + 1; } } N.f();")) == "2"
