@@ -102,6 +102,12 @@ suite "ts runtime":
     check runCode(tx("let v = {a: 1} as const; v.a + 1;")) == "2"
     check runCode(tx("let v: string | null = \"a\"; v! + \"b\";")) == "ab"
     check runCode(tx("let v = <string>\"a\"; v + \"b\";")) == "ab"
+    check runCode(tx("let v = <string>(\"a\" + \"b\"); v;")) == "ab"
+    check runCode(tx("let f = (x: string) => x + \"!\"; f(\"hi\");")) == "hi!"
+    check runCode(tx("let f = (x: string): string => x + \"!\"; f(\"hi\");")) == "hi!"
+    check runCode(tx("let f = async (x: string) => x + \"!\"; f(\"hi\");")) == "hi!"
+    check runCode(tx("let f = () => 41; f() + 1;")) == "42"
+    check runCode(tx("let g: any = null; let h = g?.(\"x\"); h == null;")) == "true"
     check runCode(tx("let v = 5 as number; v * 2;")) == "10"
 
   test "enums run with reverse mappings":
