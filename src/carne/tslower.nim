@@ -492,7 +492,9 @@ proc transpileTS*(code, path: string): TsLowered =
     while p.curr.kind != tkEOF:
       discard parseStatement(p)
   except OpenAstParsingError as e:
-    raise newException(CarneError, path & ": " & e.msg.strip())
+    # The parser message carries its own multi-line source context;
+    # put the path on its own line so the context block stays intact.
+    raise newException(CarneError, path & ":\n" & e.msg.strip())
   let starts = lineStarts(code)
   let (roots, nodes) = buildTree(p.stripSpans)
   var assigns: seq[tuple[text: string, line: int]] = @[]

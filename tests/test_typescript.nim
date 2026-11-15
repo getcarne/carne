@@ -223,6 +223,15 @@ suite "ts run and stack traces":
     except CarneError as e:
       check "t.ts" in e.msg
       check "1:" in e.msg
+    # The path goes on its own line so the parser's source context
+    # block (offending line, caret, diagnostic) stays intact.
+    try:
+      discard runCode("let v = <string>(a + );\n", "t.ts")
+      check false
+    except CarneError as e:
+      let lines = e.msg.splitLines()
+      check lines[0] == "t.ts:"
+      check lines[^1].startsWith("Error (")
 
   test "namespace edge cases":
     # Type-only members vanish with their export keyword.
