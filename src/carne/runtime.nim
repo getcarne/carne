@@ -20,6 +20,7 @@ import powpow/loop
 import ./bridge
 import ./modules
 import ./std/timers
+import ./tslower
 
 export bridge
 
@@ -84,7 +85,7 @@ proc topRejectImpl(ctx: JSContextRef; function, thisObject: JSObjectRef;
   if rt != nil:
     if int(argumentCount) > 0 and arguments != nil:
       let args = cast[ptr UncheckedArray[JSValueRef]](arguments)
-      rt.promiseText = valueToString(ctx, args[0])
+      rt.promiseText = formatRtError(ctx, args[0], rt)
     else:
       rt.promiseText = ""
     rt.promiseSettled = true
@@ -152,11 +153,27 @@ proc runCodeEx*(code: string; sourceURL = "script.js";
   ## JS exceptions (eval-time or uncaught async). The event loop is
   ## created lazily: pure-sync scripts never pay for it. `baseDir` seeds
   ## relative `require("./...")` for file-backed runs (see runFileEx).
+  ## TypeScript sources (`.ts`/`.mts`/`.cts`) are lowered to JavaScript
+  ## first; their line map feeds TS stack traces.
+  var js = code
+  var tsLines: seq[int] = @[]
+  let isTs = sourceURL.endsWith(".ts") or sourceURL.endsWith(".mts") or
+    sourceURL.endsWith(".cts")
+  if isTs:
+    let lowered = transpileTS(code, sourceURL)
+    js = lowered.code
+    tsLines = lowered.lines
+    if looksEsm(js):
+      raise newException(CarneError, sourceURL &
+        " uses ESM (import/export) - only CommonJS is supported")
   let rt = Runtime(ctx: nil, argv: argv, loop: nil, pending: 0,
     exitRequested: false, exitCode: 0, uncaught: "",
     instances: initTable[string, JSObjectRef](), moduleStack: @[],
     timerSeq: 0, timers: initTable[int, TimerEntry](),
-    source: code, sourceURL: sourceURL, baseDir: baseDir)
+    source: code, sourceURL: sourceURL, baseDir: baseDir,
+    tsMaps: initTable[string, TsLineMap]())
+  if isTs:
+    rt.tsMaps[sourceURL] = TsLineMap(lines: tsLines, base: 0)
   if baseDir.len > 0:
     rt.moduleStack.add(baseDir)
   withGlobalContext(ctx):
@@ -176,9 +193,19 @@ proc runCodeEx*(code: string; sourceURL = "script.js";
         raise newException(CarneError,
           "failed to initialize runtime: " & valueToString(ctx, setupEx))
       var ex: JSValueRef = nil
-      let res = evalScript(ctx, code, sourceURL = sourceURL, exception = ex)
+      let res = evalScript(ctx, js, sourceURL = sourceURL, exception = ex)
       mark(prof, pt, "eval")
       if ex != nil:
+        # Entry-map remapping needs entry coordinates. Loader failures
+        # propagate as `require: ...` errors raised at the require site
+        # (entry coordinates, certain); other errors are certain only
+        # in single-file runs (a required module's direct throw carries
+        # its own coordinates). Never misattribute: fall back to the
+        # plain message otherwise.
+        if isTs and (jsErrorMessage(ctx, ex).startsWith("require: ") or
+            rt.tsMaps.len == 1):
+          raise newException(CarneError,
+            formatTsError(ctx, ex, sourceURL, tsLines))
         raise newException(CarneError, valueToString(ctx, ex))
       var completion = ""
       var awaited: JSValueRef = nil

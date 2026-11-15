@@ -168,10 +168,12 @@ test "findTestFiles discovers nested *.test.js only":
   writeFile(base / "tests" / "a.test.js", "x")
   writeFile(base / "tests" / "sub" / "b.test.js", "x")
   writeFile(base / "tests" / "sub" / "deep" / "c.test.js", "x")
+  writeFile(base / "tests" / "d.test.ts", "x")
   writeFile(base / "tests" / "helper.js", "x")
   writeFile(base / "tests" / "old.nim", "x")
   check findTestFiles(base / "tests") == @[
     base / "tests" / "a.test.js",
+    base / "tests" / "d.test.ts",
     base / "tests" / "sub" / "b.test.js",
     base / "tests" / "sub" / "deep" / "c.test.js"]
   check findTestFiles(base / "missing") == newSeq[string]()
@@ -184,11 +186,13 @@ test "resolveTestArg is file-only":
   writeFile(base / "tests" / "a.test.js", "x")
   writeFile(base / "tests" / "sub" / "b.test.js", "x")
   writeFile(base / "tests" / "helper.js", "x")
+  writeFile(base / "tests" / "typed.test.ts", "x")
   let r = base / "tests"
   check resolveTestArg("a", r) == r / "a.test.js"
   check resolveTestArg("sub/b", r) == r / "sub" / "b.test.js"
   check resolveTestArg(r / "a.test.js", r) == r / "a.test.js"
   check resolveTestArg("helper", r) == r / "helper.js"
+  check resolveTestArg("typed", r) == r / "typed.test.ts"
   check resolveTestArg("missing", r) == ""
   check resolveTestArg("sub", r) == ""
   removeDir(base)

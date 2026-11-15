@@ -280,7 +280,8 @@ proc packageEntryPoint*(cfg: DatpkgrConfig, root, name: string): string =
     except CatchableError:
       discard
   for cand in [root / "index.js", root / "src" / "index.js",
-      root / name & ".js"]:
+      root / name & ".js", root / "index.ts", root / "src" / "index.ts",
+      root / name & ".ts"]:
     let hit = containedHit(root, cand)
     if hit.len > 0:
       return hit
@@ -325,7 +326,8 @@ proc resolvePkgImport*(cfg: DatpkgrConfig,
     if hit.len > 0:
       return some(hit)
     return none(string)
-  let hit = containedHit(root, joined & ".js")
-  if hit.len > 0:
-    return some(hit)
+  for suff in [".js", ".ts"]:
+    let hit = containedHit(root, joined & suff)
+    if hit.len > 0:
+      return some(hit)
   none(string)

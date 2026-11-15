@@ -18,6 +18,7 @@ import javascriptcore
 
 import ../bridge
 import ../modules
+import ../tslower
 import ./pkgman
 
 var loaderCfg: DatpkgrConfig = nil
@@ -40,19 +41,8 @@ proc ensurePkgResolveLock() =
         cpuRelax()
 
 proc looksEsm(code: string): bool =
-  ## Line-anchored import/export keyword heuristic (`//` comments
-  ## skipped). Block comments and strings can fool it; v1 accepts that.
-  for line in code.splitLines():
-    let t = line.strip()
-    if t.startsWith("//"):
-      continue
-    for kw in ["import", "export"]:
-      if t.startsWith(kw):
-        if t.len == kw.len:
-          return true
-        if t[kw.len] in {' ', '\t', '{', '*', '"', '\''}:
-          return true
-  false
+  ## The ESM gate lives in ../tslower (shared with the `.ts` run path).
+  tslower.looksEsm(code)
 
 proc loadJsFile*(ctx: JSContextRef; rt: Runtime; spec, path: string;
     exception: ptr JSValueRef): JSValueRef =
@@ -64,6 +54,19 @@ proc loadJsFile*(ctx: JSContextRef; rt: Runtime; spec, path: string;
     throwError(ctx, "require: cannot read \"" & spec & "\": " & e.msg,
       exception)
     return nil
+  var base = 0
+  if path.endsWith(".ts") or path.endsWith(".mts") or
+      path.endsWith(".cts"):
+    # TypeScript sources lower first; the transpile runs once per load
+    # (instances are cached above) and feeds the TS stack traces.
+    try:
+      let lowered = transpileTS(code, path)
+      code = lowered.code
+      rt.tsMaps[path] = TsLineMap(lines: lowered.lines, base: 1)
+      base = 1
+    except CarneError as e:
+      throwError(ctx, "require: " & e.msg, exception)
+      return nil
   if looksEsm(code):
     throwError(ctx, "require: pkg \"" & spec &
       "\" uses ESM (import/export) - only CommonJS is supported",
@@ -84,7 +87,14 @@ proc loadJsFile*(ctx: JSContextRef; rt: Runtime; spec, path: string;
   if ex != nil or fn == nil or not JSValueIsObject(ctx, fn) or
       not JSObjectIsFunction(ctx, cast[JSObjectRef](fn)):
     rt.instances.del(spec)
-    let msg = if ex != nil: valueToString(ctx, ex) else: "not a function"
+    let msg =
+      if ex != nil:
+        if base > 0 and rt.tsMaps.hasKey(path):
+          let m = rt.tsMaps[path]
+          formatTsError(ctx, ex, path, m.lines, m.base)
+        else:
+          valueToString(ctx, ex)
+      else: "not a function"
     throwError(ctx, "require: failed to load \"" & spec & "\": " & msg,
       exception)
     return nil
@@ -98,8 +108,14 @@ proc loadJsFile*(ctx: JSContextRef; rt: Runtime; spec, path: string;
       addr args[0], addr callEx)
     if callEx != nil:
       rt.instances.del(spec)
-      throwError(ctx, "require: error in \"" & spec & "\": " &
-        valueToString(ctx, callEx), exception)
+      let msg =
+        if base > 0 and rt.tsMaps.hasKey(path):
+          let m = rt.tsMaps[path]
+          formatTsError(ctx, callEx, path, m.lines, m.base)
+        else:
+          valueToString(ctx, callEx)
+      throwError(ctx, "require: error in \"" & spec & "\": " & msg,
+        exception)
       return nil
   finally:
     discard rt.moduleStack.pop()
@@ -183,7 +199,8 @@ proc requireRelative(ctx: JSContextRef; rt: Runtime; spec: string;
       "\" outside a package (only pkg files can use ./...)", exception)
     return nil
   let joined = normalizedPath(rt.moduleStack[^1] / spec)
-  for cand in [joined, joined & ".js", joined / "index.js"]:
+  for cand in [joined, joined & ".js", joined & ".ts", joined / "index.js",
+      joined / "index.ts"]:
     if fileExists(cand):
       if rt.instances.hasKey(cand):
         return rt.instances[cand]

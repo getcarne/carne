@@ -45,6 +45,9 @@ script that just runs, take Carne.
 - Multi-worker HTTP serving off one port, with zero-copy file responses (sendfile, ETag/Range)
 - Built-in test runner: `carne test` discovers and runs `tests/**/*.test.js` (`std/test`)
 - Terminal toolkit: styling, prompts, password reads, CLI arg parsing (`std/terminal`)
+- Native TypeScript: `carne run` executes `.ts` directly with
+  full lowering (enums, namespaces, param properties) and
+  `.ts`-mapped stack traces
 - Built-in package manager (`carne pkg`)
   - one shared global store in your home dir, no `node_modules`,
     no duplicated installs across projects
@@ -66,8 +69,8 @@ A JavaScript runtime in Nim
 usage: carne <command> [args] [options]
 
 Scripting:
-  run <script.js> [args]    run a .js file
-  test [file] [...]         run tests/**/*.test.js (or the given file)
+  run <script.js|script.ts> [args]    run a .js or .ts file
+  test [file] [...]         run tests/**/*.test.{js,ts} (or the given file)
 
 Standard library:
   std init                  download JS stdlib (std/*) into ~/.carne/std
@@ -179,6 +182,44 @@ inside a package.
 
 Only CommonJS v1: ESM (`import`/`export`) packages fail with a clear
 error, as do packages with no loadable entry.
+
+### TypeScript
+
+`carne run` executes `.ts` files directly (plus `.mts`/`.cts`),
+`require("./...")` resolves `.ts` siblings, and `pkg/` entries may
+point at TypeScript sources. There is no typechecking: sources lower
+to JavaScript at load time (full lowering, not just erasure).
+
+```ts
+enum Direction { Up, Down = 2 }
+namespace Shapes {
+  export interface Circle { radius: number }
+  export function area(c: Circle): number {
+    return Math.PI * c.radius * c.radius;
+  }
+}
+const a: Shapes.Circle = { radius: 2 };
+console.log(Direction.Down, Shapes.area(a)); // 2 12.566...
+```
+
+Lowered output keeps your line numbers (types blank out in place),
+so runtime errors report the original `.ts` location:
+
+```
+$ carne run boom.ts
+Error: boom.ts:4:18: Error: kaboom
+    at boom
+    at global code
+```
+
+Supported: annotations, generics, `as`/`satisfies`, non-null
+assertions, interfaces, type aliases, enums (incl. `const enum`),
+namespaces, parameter properties, overloads, abstract classes,
+`declare`, `using`, `import x = require(...)`, `export =`, typed
+catch params and `this` parameter removal. ESM `import`/`export`
+syntax stays rejected (CommonJS only, like `.js`), as do decorators
+and implementation-less declarations, each with a clear error
+pointing at the source line.
 
 ## Standard Library
 

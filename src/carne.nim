@@ -1,7 +1,7 @@
 # Carne - a JavaScript runtime on JavaScriptCore (macOS + Linux).
 #
 # Library API: runCode / runFile from ./carne/runtime.
-# CLI: `carne run <script.js> [args]`, --help, --version.
+# CLI: `carne run <script.js|script.ts> [args]`, --help, --version.
 
 import ./carne/runtime
 export runtime
@@ -189,7 +189,7 @@ when isMainModule:
     if failedFiles.len == 0: 0 else: 1
 
   proc runTestCommand(args: seq[string]): int =
-    ## `carne test` runs tests/**/*.test.js; `carne test <file>`
+    ## `carne test` runs tests/**/*.test.{js,ts}; `carne test <file>`
     ## runs the given test module (file-only).
     if args.len == 0:
       let files = findTestFiles("tests")
@@ -197,7 +197,7 @@ when isMainModule:
         if not dirExists("tests"):
           displayError("no tests/ directory found")
         else:
-          displayError("no test files found (tests/**/*.test.js)")
+          displayError("no test files found (tests/**/*.test.{js,ts})")
         return 1
       return runTestFiles(files)
     var files: seq[string] = @[]
@@ -396,7 +396,7 @@ when isMainModule:
       return 0
     case command
     of "run":
-      # run a .js script file
+      # run a .js/.ts script file
       if positionals.len == 0:
         displayError("script is required")
         printHelp()

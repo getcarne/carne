@@ -39,6 +39,13 @@ type
     rest*: seq[JSValueRef]
     isInterval*: bool
 
+  TsLineMap* = object
+    ## Remaps transpiled-TS lines to original TS lines for stack
+    ## traces: `lines` maps output line (0-based) to TS line (1-based),
+    ## `base` skips wrapper lines (1 for require(), 0 for direct eval).
+    lines*: seq[int]
+    base*: int
+
   Runtime* = ref object
     ## Per-run shared state: JS context, argv, powpow loop, pending-work
     ## refcount, exit signalling, require cache, live timers.
@@ -60,6 +67,9 @@ type
     sourceURL*: string
     baseDir*: string
       ## Retained boot source so http workers can re-run the script.
+    tsMaps*: Table[string, TsLineMap]
+      ## Transpiled-TS line maps by source path (direct eval and
+      ## require() alike), for stack-trace remapping.
 
 var rtThread {.threadvar.}: Runtime
 

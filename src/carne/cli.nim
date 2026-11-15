@@ -236,27 +236,31 @@ proc confirm*(question: string): bool =
     result = false
 
 proc findTestFiles*(root = "tests"): seq[string] =
-  ## Recursive `*.test.js` discovery under root, sorted. Empty when
-  ## the directory is missing (callers report that themselves).
+  ## Recursive `*.test.js`/`*.test.ts` discovery under root, sorted.
+  ## Empty when the directory is missing (callers report that themselves).
   result = @[]
   if not dirExists(root):
     return
   for path in walkDirRec(root, yieldFilter = {pcFile}):
-    if path.endsWith(".test.js"):
+    if path.endsWith(".test.js") or path.endsWith(".test.ts"):
       result.add(path)
   result.sort()
 
 proc resolveTestArg*(arg: string; root = "tests"): string =
   ## File-only resolution for `carne test <arg>`. Tries the arg as
-  ## given, then under root, then `.test.js` variants. Returns ""
-  ## when nothing exists.
+  ## given, then under root, then `.test.js`/`.test.ts` variants.
+  ## Returns "" when nothing exists.
   var cands: seq[string] = @[arg]
   cands.add(root / arg)
-  if not arg.endsWith(".js"):
+  if not arg.endsWith(".js") and not arg.endsWith(".ts"):
     cands.add(root / arg & ".test.js")
     cands.add(arg & ".test.js")
+    cands.add(root / arg & ".test.ts")
+    cands.add(arg & ".test.ts")
     cands.add(root / arg & ".js")
     cands.add(arg & ".js")
+    cands.add(root / arg & ".ts")
+    cands.add(arg & ".ts")
   var seen: seq[string] = @[]
   for c in cands:
     if c in seen:
@@ -275,8 +279,8 @@ proc printHelp*() =
   echo "usage: carne <command> [args] [options]"
   echo ""
   echo label("Scripting:")
-  cmdHelp("run <script.js> [args]", "run a .js file")
-  cmdHelp("test [file] [...]", "run tests/**/*.test.js (or the given file)")
+  cmdHelp("run <script.js|script.ts> [args]", "run a .js or .ts file")
+  cmdHelp("test [file] [...]", "run tests/**/*.test.{js,ts} (or the given file)")
   echo ""
   echo label("Standard library:")
   cmdHelp("std init", "download JS stdlib (std/*) into ~/.carne/std")

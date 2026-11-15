@@ -18,6 +18,7 @@ import javascriptcore
 import powpow/loop
 
 import ../bridge
+import ../tslower
 
 proc decPending(rt: Runtime) =
   dec rt.pending
@@ -47,7 +48,7 @@ proc fireTimer(rt: Runtime; jsId: int) =
   discard res
   if ex != nil:
     if rt.uncaught.len == 0:
-      rt.uncaught = valueToString(rt.ctx, ex)
+      rt.uncaught = formatRtError(rt.ctx, ex, rt)
     rt.exitCode = 1
   if not entry.isInterval:
     rt.timers.del(jsId)
