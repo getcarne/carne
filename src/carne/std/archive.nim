@@ -97,6 +97,7 @@ proc archiveName(f: ArchiveFormat): string =
   of afTar: "tar"
   of afZip: "zip"
   of afRar: "rar"
+  of af7z: "7z"
 
 proc checkEntryName(name: string): string =
   ## Validates a normalized (no trailing slash) entry name. Raises
