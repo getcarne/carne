@@ -216,3 +216,16 @@ suite "ts run and stack traces":
     except CarneError as e:
       check "t.ts" in e.msg
       check "1:" in e.msg
+
+  test "async errors map too":
+    try:
+      discard runCode("setTimeout(() => { throw new Error(\"timer-boom\"); }, 5);", "t.ts")
+      check false
+    except CarneError as e:
+      check "t.ts:1:" in e.msg
+      check "timer-boom" in e.msg
+    try:
+      discard runCode("(async () => { throw new Error(\"rej-boom\"); })();", "t.ts")
+      check false
+    except CarneError as e:
+      check "rej-boom" in e.msg
