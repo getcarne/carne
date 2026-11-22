@@ -1,9 +1,7 @@
 const db = require("std/db");
 
 // Async ORM over sqlite (in-memory here; swap for "sqlite:app.db"
-// or a postgres spec). Wrap in an async IIFE: top-level await is v1
-// out of scope, so the run drains the completion promise instead.
-(async () => {
+// or a postgres spec).
 const s = await db.connect("sqlite::memory:");
 
 // Schema first: models declare tables, migrate() tracks versions.
@@ -52,4 +50,3 @@ const n = await s.query("SELECT COUNT(*) AS c FROM users WHERE age > ?",
 console.log("over 18: " + n.rows[0].c);
 
 await s.close();
-})();

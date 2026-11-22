@@ -10,8 +10,8 @@ How to verify each item: `clue build`, `clue test <name>`, `./bin/carne run <fil
 
 Base: `src/carne/runtime.nim:162` (`runCodeEx`), `src/carne/modules.nim:48` (lazy registry), `src/carne/bridge.nim:1` (`registerFn` DSL).
 
-- [ ] Top-level `await` in entry scripts without manual async IIFE wrapper. Keep sync path byte-identical, preserve line numbers on syntax errors, keep `pkg/*` requires sync.
-- [ ] `exportClass` in the module DSL alongside `registerFn`. Same arity checks and `fn:` error prefix, teardown-safe.
+- [x] Top-level `await` in entry scripts without manual async IIFE wrapper. Keep sync path byte-identical, preserve line numbers on syntax errors, keep `pkg/*` requires sync.
+- [x] `exportClass` in the module DSL alongside `registerFn`. Same arity checks and error prefix, teardown-safe.
 - [ ] Error contract: one `fn:` prefix, JSDoc-first type mismatches, `TypeError` for arg validation. Audit all std modules for bare `options.*` messages.
 - [ ] Lazy event loop stays lazy: pure-sync scripts never create a powpow loop (`src/carne/runtime.nim:224`). Keep per-run TLS and cached spec data.
 - [ ] Require cache and teardown: per-run `instances`, ordered `onTeardown`, worker thread isolation (`src/carne/modules.nim:40`).

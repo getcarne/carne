@@ -16,8 +16,8 @@
 > Carne is still experimental: it runs on macOS and Linux
 > (Linux needs `libjavascriptcoregtk-4.1-dev` installed), the `std/*` API
 > may change between 0.x releases, and a few modules are parse-only
-> in v1 (see the Standard Library notes below). Scripts needing
-> top-level `await` must wrap in an async IIFE for now. Not recommended
+> in v1 (see the Standard Library notes below). Entry scripts support
+> top-level `await`; package `require()` remains synchronous. Not recommended
 > for production yet, but the full test suite passes on both platforms
 > and every example below is covered by it.
 
@@ -223,6 +223,25 @@ carne gen addon hello   # scaffold a wrapper package
 carne build native/hello.nim native/hello.addon
 ```
 
+### Module DSL classes
+Modules built with `init` can export constructors alongside functions and
+properties. The constructor body returns the instance object:
+
+```nim
+import javascriptcore
+import carne/bridge
+
+init proc(module: Module) =
+  exportObject:
+    module.exportClass Point(x: int):
+      let point = newObject(ctx)
+      setProp(ctx, point, "x", toJS(ctx, x), exception)
+      point
+```
+
+The exported value is a JavaScript constructor, so instances inherit its
+prototype and pass `instanceof Point`.
+
 Building requires carne as a Nim package, via nimble or clue.
 `require("./x.addon")` works from any JS file (package or script);
 one library loads per process with fresh exports per context, and
@@ -292,10 +311,10 @@ Full API reference with examples: https://openpeeps.github.io/carne/
 - [x] `std/archive` (tar/zip/rar creation + extraction, gz/lz4/bz2/brotli; in-memory and file APIs)
 - [x] Lazy startup (deferred event loop, per-run TLS, cached spec data)
 - [x] Benchmark suite + results
-- [ ] Top-level await in scripts (currently needs an async IIFE)
+- [x] Top-level `await` in entry scripts (awaited completion is drained; package `require()` stays synchronous)
 - [x] `std/crypto`: X25519 exchange, RSA/ECDSA, AES-GCM
 - [x] `std/gettext` `.mo` file catalogs, `std/svg` stringify (`std/qr` decode deferred)
-- [ ] `exportClass` in the module DSL
+- [x] `exportClass` in the module DSL (checked constructor arguments; constructor bodies return JS objects)
 - [x] Public package registry ([getcarne/carnepkgs](https://github.com/getcarne/carnepkgs))
 - [x] `carne pkg publish` (fork + PR flow, `.tokens` auth)
 - [x] Beyond macOS (Linux via JavaScriptCoreGTK 4.1)

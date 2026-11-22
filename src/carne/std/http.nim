@@ -65,9 +65,8 @@
 # fields first read after the handler returns answer "" ({} for
 # headers). Assignments to req fields stick.
 #
-# Note: scripts need an async IIFE for await (top-level await is out of
-# scope in v1): `(async () => { ... })()`. The runtime unwraps a
-# top-level completion promise, so tests assert on it directly.
+# Entry scripts support top-level await. Package modules loaded with
+# require() stay synchronous. The runtime unwraps completion promises.
 
 import std/[json, math, options, os, strutils, tables, times]
 import std/httpcore except HttpMethod

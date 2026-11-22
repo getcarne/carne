@@ -128,6 +128,11 @@ proc makeFunction*(ctx: JSContextRef; name: string;
   defer: JSStringRelease(jsName)
   JSObjectMakeFunctionWithCallback(ctx, jsName, cb)
 
+proc makeConstructor*(ctx: JSContextRef;
+    cb: JSObjectCallAsConstructorCallback): JSObjectRef =
+  ## Wraps a Nim callback as a JavaScript constructor.
+  JSObjectMakeConstructor(ctx, nil, cb)
+
 proc toJS*(ctx: JSContextRef; s: string): JSValueRef =
   let jsStr = newJSString(s)
   defer: JSStringRelease(jsStr)
@@ -178,6 +183,17 @@ proc throwTypeError*(ctx: JSContextRef; msg: string;
       exception[] = err
       return
   throwError(ctx, msg, exception)
+
+proc constructorResult*(ctx: JSContextRef; value: JSValueRef;
+    className: string; exception: ptr JSValueRef): JSObjectRef =
+  ## Validates a constructor body result before returning it to JSC.
+  if value == nil:
+    return nil
+  if not JSValueIsObject(ctx, value):
+    throwTypeError(ctx, className & ": constructor must return an object",
+      exception)
+    return nil
+  cast[JSObjectRef](value)
 
 proc setPropChecked*(ctx: JSContextRef; obj: JSObjectRef; name: string;
     value: JSValueRef; fname: string; exception: ptr JSValueRef): bool =
@@ -1574,7 +1590,8 @@ proc emitGuard(body: NimNode; b: FnBindings; idx: int;
     inner)))
 
 proc buildCallbackFn*(fname: string; ctxName: string;
-    fnBody: NimNode; params: seq[ParamSpec]): NimNode =
+    fnBody: NimNode; params: seq[ParamSpec];
+    callbackName = ""): NimNode =
   ## Builds the nested `cdecl` callback proc named `fname`. The header
   ## params generate the arity check plus one reader each (see
   ## parseHeader); the user body follows with the bindings in scope
@@ -1722,7 +1739,7 @@ proc buildCallbackFn*(fname: string; ctxName: string;
   formal.add(nnkIdentDefs.newTree(b.exSym, ptrJsVal, newEmptyNode()))
 
   result = newNimNode(nnkProcDef)
-  result.add(newIdentNode(fname))
+  result.add(newIdentNode(if callbackName.len > 0: callbackName else: fname))
   result.add(newEmptyNode())
   result.add(newEmptyNode())
   result.add(formal)
@@ -1757,6 +1774,33 @@ macro registerFn*(ctx: untyped; header: untyped;
   let parsed = parseHeader(header, "registerFn")
   result = buildCallbackFn(parsed.fname, ctxName, fnBody, parsed.params)
 
+proc buildConstructorAdapter(className, callbackName: string): NimNode =
+  ## Adapts the checked function callback to JavaScriptCore's constructor
+  ## callback ABI. Exported constructors must return a JS object.
+  let ctx = newIdentNode("ctx")
+  let constructor = newIdentNode("constructor")
+  let argc = newIdentNode("argumentCount")
+  let argv = newIdentNode("arguments")
+  let exception = newIdentNode("exception")
+  let value = genSym(nskLet, "value")
+  let body = newStmtList()
+  body.add(newLetStmt(value, newCall(callbackName, ctx, constructor,
+    newNilLit(), argc, argv, exception)))
+  body.add(newCall("constructorResult", ctx, value,
+    newStrLitNode(className), exception))
+  let formal = nnkFormalParams.newTree(newIdentNode("JSObjectRef"),
+    nnkIdentDefs.newTree(ctx, newIdentNode("JSContextRef"), newEmptyNode()),
+    nnkIdentDefs.newTree(constructor, newIdentNode("JSObjectRef"),
+      newEmptyNode()),
+    nnkIdentDefs.newTree(argc, newIdentNode("csize_t"), newEmptyNode()),
+    nnkIdentDefs.newTree(argv,
+      nnkPtrTy.newTree(newIdentNode("JSValueRef")), newEmptyNode()),
+    nnkIdentDefs.newTree(exception,
+      nnkPtrTy.newTree(newIdentNode("JSValueRef")), newEmptyNode()))
+  result = nnkProcDef.newTree(newIdentNode(className & "ClassCtor"),
+    newEmptyNode(), newEmptyNode(), formal,
+    nnkPragma.newTree(newIdentNode("cdecl")), newEmptyNode(), body)
+
 proc dotCallTarget(n: NimNode; mname, field: string): bool =
   ## True when `n` is `mname.field(...)` / `mname.field ...`.
   (n.kind in {nnkCommand, nnkCall}) and n.len > 0 and
@@ -1773,13 +1817,17 @@ macro init*(def: untyped): untyped =
   ##       module.property greeting = "hi"
   ##       module.registerFn readFile(path: string):
   ##         ...
+  ##       module.exportClass Point(value: int):
+  ##         let point = newObject(ctx)
+  ##         setProp(ctx, point, "value", toJS(ctx, value), exception)
+  ##         point
   ##
-  ## `module.registerFn` defines the callback and attaches it to the
-  ## namespace; `module.property` attaches a data value (string, int,
-  ## float, bool, JsonNode). A `##` doc comment on a member is collected
-  ## for error output (see buildCallbackFn). Bare statements run
-  ## as init-time setup code. Member declarations outside `exportObject:`
-  ## are an error, as is anything but members inside it.
+  ## `module.registerFn` defines a function, `module.exportClass` defines
+  ## a constructor whose body returns an object, and `module.property`
+  ## attaches a data value (string, int, float, bool, JsonNode). A `##` doc
+  ## comment on a member is collected for error output (see buildCallbackFn).
+  ## Bare statements run as init-time setup code. Member declarations
+  ## outside `exportObject:` are an error, as is anything but members inside it.
   if def.kind != nnkLambda:
     error("init expects `proc(<name>: Module) = ...`", def)
   var formal: NimNode = nil
@@ -1835,10 +1883,27 @@ macro init*(def: untyped): untyped =
             newCall("propToJS", ctxId,
               substModule(member[1][1], mname, moduleSym)),
             nnkCommand.newTree(newIdentNode("addr"), exSym)))
+        elif dotCallTarget(member, mname, "exportClass"):
+          if member.len != 3 or member[2].kind != nnkStmtList:
+            error("exportClass expects a header with params and a body",
+              member)
+          let parsed = parseHeader(member[1], "exportClass")
+          let className = parsed.fname
+          let callbackName = className & "ClassImpl"
+          outStmts.add(buildCallbackFn(className, "ctx", member[2],
+            parsed.params, callbackName))
+          outStmts.add(buildConstructorAdapter(className, callbackName))
+          outStmts.add(newCall("setProp", ctxId, copy(nsOf),
+            newStrLitNode(className),
+            newCall("makeConstructor", ctxId,
+              newIdentNode(className & "ClassCtor")),
+            nnkCommand.newTree(newIdentNode("addr"), exSym)))
         else:
-          error("only module.property and module.registerFn allowed " &
+          error("only module.property, module.registerFn and " &
+            "module.exportClass allowed " &
             "in exportObject", member)
     elif dotCallTarget(stmt, mname, "registerFn") or
+        dotCallTarget(stmt, mname, "exportClass") or
         dotCallTarget(stmt, mname, "property"):
       error("member declarations must live in exportObject:", stmt)
     else:

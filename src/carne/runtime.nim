@@ -159,6 +159,73 @@ proc mark(prof: bool; pt: var MonoTime; phase: string) =
       $(inNanoseconds(now - pt) div 1000) & "us")
     pt = now
 
+proc hasAwaitToken(code: string): bool =
+  ## Finds an await identifier without matching comments or quoted text.
+  var i = 0
+  var templateStates: seq[bool] = @[]
+  var expressionBraces: seq[int] = @[]
+  while i < code.len:
+    if templateStates.len > 0 and not templateStates[^1]:
+      if code[i] == '\\':
+        i = min(i + 2, code.len)
+      elif code[i] == '`':
+        discard templateStates.pop()
+        inc i
+      elif code[i] == '$' and i + 1 < code.len and code[i + 1] == '{':
+        templateStates[^1] = true
+        expressionBraces.add(1)
+        i += 2
+      else:
+        inc i
+    elif code[i] in {' ', '\t', '\r', '\n'}:
+      inc i
+    elif code[i] == '/' and i + 1 < code.len and code[i + 1] == '/':
+      i += 2
+      while i < code.len and code[i] != '\n':
+        inc i
+    elif code[i] == '/' and i + 1 < code.len and code[i + 1] == '*':
+      i += 2
+      while i + 1 < code.len and
+          not (code[i] == '*' and code[i + 1] == '/'):
+        inc i
+      i = min(i + 2, code.len)
+    elif code[i] in {'"', '\''}:
+      let quote = code[i]
+      inc i
+      while i < code.len:
+        if code[i] == '\\':
+          i = min(i + 2, code.len)
+        elif code[i] == quote:
+          inc i
+          break
+        else:
+          inc i
+    elif code[i] in {'a'..'z', 'A'..'Z', '_', '$'}:
+      let start = i
+      inc i
+      while i < code.len and code[i] in
+          {'a'..'z', 'A'..'Z', '0'..'9', '_', '$'}:
+        inc i
+      if code[start ..< i] == "await":
+        return true
+    elif code[i] == '`':
+      templateStates.add(false)
+      inc i
+    elif templateStates.len > 0 and templateStates[^1] and
+        code[i] == '{':
+      inc expressionBraces[^1]
+      inc i
+    elif templateStates.len > 0 and templateStates[^1] and
+        code[i] == '}':
+      if expressionBraces[^1] == 1:
+        discard expressionBraces.pop()
+        templateStates[^1] = false
+      else:
+        dec expressionBraces[^1]
+      inc i
+    else:
+      inc i
+
 proc runCodeEx*(code: string; sourceURL = "script.js";
     argv: seq[string] = @[]; baseDir = ""): tuple[output: string, code: int] =
   ## Evaluates `code`, drains async work, returns the completion value
@@ -192,7 +259,22 @@ proc runCodeEx*(code: string; sourceURL = "script.js";
         raise newException(CarneError,
           "failed to initialize runtime: " & valueToString(ctx, setupEx))
       var ex: JSValueRef = nil
-      let res = evalScript(ctx, code, sourceURL = sourceURL, exception = ex)
+      var res = evalScript(ctx, code, sourceURL = sourceURL, exception = ex)
+      var sourceHasSyntaxError = false
+      if ex != nil and hasAwaitToken(code):
+        let jsSource = newJSString(code)
+        var syntaxEx: JSValueRef = nil
+        sourceHasSyntaxError = not JSCheckScriptSyntax(ctx, jsSource, nil,
+          1, addr syntaxEx)
+        JSStringRelease(jsSource)
+      if sourceHasSyntaxError:
+        let originalError = valueToString(ctx, ex)
+        ex = nil
+        let wrapped = "(async () => {\n" & code & "\n})()"
+        res = evalScript(ctx, wrapped, sourceURL = sourceURL, line = 0,
+          exception = ex)
+        if ex != nil:
+          raise newException(CarneError, originalError)
       mark(prof, pt, "eval")
       if ex != nil:
         raise newException(CarneError, valueToString(ctx, ex))
@@ -201,9 +283,9 @@ proc runCodeEx*(code: string; sourceURL = "script.js";
       if res != nil and not JSValueIsUndefined(ctx, res):
         let thenFn = thenFnOf(ctx, res)
         if thenFn != nil:
-          # Completion is a Promise/thenable (e.g. an async IIFE):
-          # capture its settlement after the drain below. The async
-          # work it awaits already holds pending slots of its own.
+          # Completion is a Promise/thenable (e.g. an async IIFE or
+          # top-level await): capture its settlement after the drain
+          # below. The async work it awaits holds pending slots itself.
           rt.promiseSettled = false
           rt.promiseRejected = false
           rt.promiseText = ""
