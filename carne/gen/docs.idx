@@ -1,0 +1,14 @@
+nimTitle	docs	carne/gen/docs.html	module carne/gen/docs		0
+nim	DocsError	carne/gen/docs.html#DocsError	object DocsError		32
+nim	dfJson	carne/gen/docs.html#dfJson	DocFormat.dfJson		35
+nim	dfHtml	carne/gen/docs.html#dfHtml	DocFormat.dfHtml		35
+nim	dfAll	carne/gen/docs.html#dfAll	DocFormat.dfAll		35
+nim	DocFormat	carne/gen/docs.html#DocFormat	enum DocFormat		35
+nim	JsdocParam	carne/gen/docs.html#JsdocParam	object JsdocParam		41
+nim	JsdocInfo	carne/gen/docs.html#JsdocInfo	object JsdocInfo		48
+nim	DocSymbol	carne/gen/docs.html#DocSymbol	object DocSymbol		58
+nim	escapeHtml	carne/gen/docs.html#escapeHtml,string	proc escapeHtml(s: string): string		83
+nim	highlightJs	carne/gen/docs.html#highlightJs,string	proc highlightJs(code: string): string		88
+nim	parseJsdoc	carne/gen/docs.html#parseJsdoc,string	proc parseJsdoc(raw: string): JsdocInfo		137
+nim	parseFormat	carne/gen/docs.html#parseFormat,string	proc parseFormat(s: string): DocFormat		344
+nim	docsCommand	carne/gen/docs.html#docsCommand,string,string,string,string	proc docsCommand(dir, formatStr, outDir, entry: string): int		837

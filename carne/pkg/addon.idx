@@ -1,0 +1,7 @@
+nimTitle	addon	carne/pkg/addon.html	module carne/pkg/addon		0
+nim	addonExts	carne/pkg/addon.html#addonExts	const addonExts		27
+nim	CarneAddonInitFn	carne/pkg/addon.html#CarneAddonInitFn	type CarneAddonInitFn		33
+nim	CarneAddonVersionFn	carne/pkg/addon.html#CarneAddonVersionFn	type CarneAddonVersionFn		36
+nim	isAddonPath	carne/pkg/addon.html#isAddonPath,string	proc isAddonPath(path: string): bool		56
+nim	insideDir	carne/pkg/addon.html#insideDir,string,string	proc insideDir(root, candidate: string): bool		64
+nim	loadAddonFile	carne/pkg/addon.html#loadAddonFile,JSContextRef,Runtime,string,string,ptr.JSValueRef	proc loadAddonFile(ctx: JSContextRef; rt: Runtime; spec, path: string;\n              exception: ptr JSValueRef): JSValueRef		82

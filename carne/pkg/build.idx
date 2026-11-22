@@ -1,0 +1,14 @@
+nimTitle	build	carne/pkg/build.html	module carne/pkg/build		0
+nim	platformAddonExt	carne/pkg/build.html#platformAddonExt	const platformAddonExt		28
+nim	defaultAddonExt	carne/pkg/build.html#defaultAddonExt	const defaultAddonExt		31
+nim	nimbleCarneDir	carne/pkg/build.html#nimbleCarneDir	proc nimbleCarneDir(): string		35
+nim	resolveCarneSrc	carne/pkg/build.html#resolveCarneSrc,string,string	proc resolveCarneSrc(envSrc, nimbleDir: string): string		49
+nim	carneSrcDir	carne/pkg/build.html#carneSrcDir	proc carneSrcDir(): string		60
+nim	checkoutSrcDir	carne/pkg/build.html#checkoutSrcDir,string	proc checkoutSrcDir(start: string): string		69
+nim	rootNimbleDir	carne/pkg/build.html#rootNimbleDir,string	proc rootNimbleDir(start: string): string		88
+nim	nimbleRequires	carne/pkg/build.html#nimbleRequires,string	proc nimbleRequires(nimbleFile: string): seq[string]		110
+nim	bestVerDir	carne/pkg/build.html#bestVerDir,string,string	proc bestVerDir(parent, name: string): string		137
+nim	verLess	carne/pkg/build.html#verLess,string,string	proc verLess(a, b: string): bool		185
+nim	resolvePkgDirs	carne/pkg/build.html#resolvePkgDirs,string,string	proc resolvePkgDirs(home, name: string): seq[string]		209
+nim	closurePaths	carne/pkg/build.html#closurePaths,string	proc closurePaths(srcFile: string; home = getHomeDir()): seq[string]		245
+nim	buildCommand	carne/pkg/build.html#buildCommand,string,string	proc buildCommand(inFile, outFile: string; release = false): int		298

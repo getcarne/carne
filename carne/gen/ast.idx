@@ -1,0 +1,13 @@
+nimTitle	ast	carne/gen/ast.html	module carne/gen/ast		0
+nim	AstError	carne/gen/ast.html#AstError	object AstError		32
+nim	afJson	carne/gen/ast.html#afJson	AstFormat.afJson		35
+nim	afBin	carne/gen/ast.html#afBin	AstFormat.afBin		35
+nim	AstFormat	carne/gen/ast.html#AstFormat	enum AstFormat		35
+nim	parseAstFormat	carne/gen/ast.html#parseAstFormat,string	proc parseAstFormat(s: string): AstFormat		50
+nim	programToJson	carne/gen/ast.html#programToJson,OpenAstProgram	proc programToJson(prog: OpenAstProgram): string		61
+nim	sameTree	carne/gen/ast.html#sameTree,Node,Node	proc sameTree(a, b: Node): bool		65
+nim	sameProgram	carne/gen/ast.html#sameProgram,OpenAstProgram,OpenAstProgram	proc sameProgram(a, b: OpenAstProgram): bool		96
+nim	encodeProgram	carne/gen/ast.html#encodeProgram,OpenAstProgram,string	proc encodeProgram(prog: OpenAstProgram; source = ""): Buffer		205
+nim	decodeProgram	carne/gen/ast.html#decodeProgram,openArray[uint8]	proc decodeProgram(data: openArray[uint8]): tuple[prog: OpenAstProgram,\n    source: string]		214
+nim	bufferToString	carne/gen/ast.html#bufferToString,Buffer	proc bufferToString(b: Buffer): string		252
+nim	astCommand	carne/gen/ast.html#astCommand,string,string,string	proc astCommand(srcPath, formatStr, outDir: string): int		258

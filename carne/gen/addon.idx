@@ -1,0 +1,3 @@
+nimTitle	addon	carne/gen/addon.html	module carne/gen/addon		0
+nim	AddonError	carne/gen/addon.html#AddonError	object AddonError		19
+nim	addonCommand	carne/gen/addon.html#addonCommand,string	proc addonCommand(target: string): int		126

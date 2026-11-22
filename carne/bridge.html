@@ -16,10 +16,10 @@
 <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA3XAAAN1wFCKJt4AAAAB3RJTUUH4QQQEwksSS9ZWwAAAk1JREFUWMPtll2ITVEUx39nn/O7Y5qR8f05wtCUUr6ZIS++8pEnkZInPImneaCQ5METNdOkeFBKUhMPRIkHKfEuUZSUlGlKPN2TrgfncpvmnntnmlEyq1Z7t89/rf9a6+y99oZxGZf/XeIq61EdtgKXgdXA0xrYAvBjOIF1AI9zvjcC74BSpndrJPkBWDScTF8Aa4E3wDlgHbASaANmVqlcCnwHvgDvgVfAJ+AikAAvgfVZwLnSVZHZaOuKoQi3ZOMi4NkYkpe1p4J7A8BpYAD49hfIy/oqG0+hLomiKP2L5L+1ubn5115S+3OAn4EnwBlgMzCjyt6ZAnQCJ4A7wOs88iRJHvw50HoujuPBoCKwHWiosy8MdfZnAdcHk8dxXFJ3VQbQlCTJvRBCGdRbD4M6uc5glpY3eAihpN5S5w12diSEcCCEcKUO4ljdr15T76ur1FDDLIQQ3qv71EdDOe3Kxj3leRXyk+pxdWnFWod6Wt2bY3de3aSuUHcPBVimHs7mK9WrmeOF6lR1o9qnzskh2ar2qm1qizpfXaPeVGdlmGN5pb09qMxz1Xb1kLqgzn1RyH7JUXW52lr5e/Kqi9qpto7V1atuUzfnARrV7jEib1T76gG2qxdGmXyiekkt1GswPTtek0aBfJp6YySGBfWg2tPQ0FAYgf1stUfdmdcjarbYJEniKIq6gY/Aw+zWHAC+p2labGpqiorFYgGYCEzN7oQdQClN07O1/EfDyGgC0ALMBdYAi4FyK+4H3gLPsxfR1zRNi+NP7nH5J+QntnXe5B5mpfQAAAAASUVORK5CYII=">
 
 <!-- CSS -->
-<link rel="stylesheet" type="text/css" href="../nimdoc.out.css?v=2.4.0">
+<link rel="stylesheet" type="text/css" href="../nimdoc.out.css?v=2.4.2">
 
 <!-- JS -->
-<script type="text/javascript" src="../dochack.js?v=2.4.0"></script>
+<script type="text/javascript" src="../dochack.js?v=2.4.2"></script>
 </head>
 <body>
   <div class="document" id="documentId">
@@ -192,9 +192,9 @@
 
 </ul>
 <ul class="simple nested-toc-section">buildCallbackFn
-  <li><a class="reference" href="#buildCallbackFn%2Cstring%2Cstring%2CNimNode%2Cseq%5BParamSpec%5D" title="buildCallbackFn(fname: string; ctxName: string; fnBody: NimNode;
-                params: seq[ParamSpec]): NimNode">buildCallbackFn(fname: string; ctxName: string; fnBody: NimNode;
-                params: seq[ParamSpec]): NimNode</a></li>
+  <li><a class="reference" href="#buildCallbackFn%2Cstring%2Cstring%2CNimNode%2Cseq%5BParamSpec%5D%2Cstring" title="buildCallbackFn(fname: string; ctxName: string; fnBody: NimNode;
+                params: seq[ParamSpec]; callbackName = &quot;&quot;): NimNode">buildCallbackFn(fname: string; ctxName: string; fnBody: NimNode;
+                params: seq[ParamSpec]; callbackName = &quot;&quot;): NimNode</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">checkArity
@@ -207,6 +207,12 @@
   <li><a class="reference" href="#checkArityMin%2Ccsize_t%2Cint%2Cstring%2CJSContextRef%2Cptr.JSValueRef%2Cstring" title="checkArityMin(argumentCount: csize_t; wantMin: int; name: string;
               ctx: JSContextRef; exception: ptr JSValueRef; usage: string = &quot;&quot;): bool">checkArityMin(argumentCount: csize_t; wantMin: int; name: string;
               ctx: JSContextRef; exception: ptr JSValueRef; usage: string = &quot;&quot;): bool</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">constructorResult
+  <li><a class="reference" href="#constructorResult%2CJSContextRef%2CJSValueRef%2Cstring%2Cptr.JSValueRef" title="constructorResult(ctx: JSContextRef; value: JSValueRef; className: string;
+                  exception: ptr JSValueRef): JSObjectRef">constructorResult(ctx: JSContextRef; value: JSValueRef; className: string;
+                  exception: ptr JSValueRef): JSObjectRef</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">currentRt
@@ -289,6 +295,10 @@
   <li><a class="reference" href="#jsTypeName%2CNimValueKind" title="jsTypeName(kind: NimValueKind): string">jsTypeName(kind: NimValueKind): string</a></li>
 
 </ul>
+<ul class="simple nested-toc-section">makeConstructor
+  <li><a class="reference" href="#makeConstructor%2CJSContextRef%2CJSObjectCallAsConstructorCallback" title="makeConstructor(ctx: JSContextRef; cb: JSObjectCallAsConstructorCallback): JSObjectRef">makeConstructor(ctx: JSContextRef; cb: JSObjectCallAsConstructorCallback): JSObjectRef</a></li>
+
+</ul>
 <ul class="simple nested-toc-section">makeFunction
   <li><a class="reference" href="#makeFunction%2CJSContextRef%2Cstring%2CJSObjectCallAsFunctionCallback" title="makeFunction(ctx: JSContextRef; name: string; cb: JSObjectCallAsFunctionCallback): JSObjectRef">makeFunction(ctx: JSContextRef; name: string; cb: JSObjectCallAsFunctionCallback): JSObjectRef</a></li>
 
@@ -345,6 +355,12 @@
   <li><a class="reference" href="#optSetStr%2CJSContextRef%2CJSObjectRef%2Cstring%2COption%5Bstring%5D%2Cstring%2Cptr.JSValueRef" title="optSetStr(ctx: JSContextRef; obj: JSObjectRef; key: string; v: Option[string];
           fname: string; exception: ptr JSValueRef): bool">optSetStr(ctx: JSContextRef; obj: JSObjectRef; key: string; v: Option[string];
           fname: string; exception: ptr JSValueRef): bool</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">parseHeader
+  <li><a class="reference" href="#parseHeader%2CNimNode%2Cstring" title="parseHeader(header: NimNode; what: string): tuple[fname: string,
+    params: seq[ParamSpec]]">parseHeader(header: NimNode; what: string): tuple[fname: string,
+    params: seq[ParamSpec]]</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">propToJS
@@ -412,6 +428,10 @@
 </ul>
 <ul class="simple nested-toc-section">throwError
   <li><a class="reference" href="#throwError%2CJSContextRef%2Cstring%2Cptr.JSValueRef" title="throwError(ctx: JSContextRef; msg: string; exception: ptr JSValueRef)">throwError(ctx: JSContextRef; msg: string; exception: ptr JSValueRef)</a></li>
+
+</ul>
+<ul class="simple nested-toc-section">throwTypeError
+  <li><a class="reference" href="#throwTypeError%2CJSContextRef%2Cstring%2Cptr.JSValueRef" title="throwTypeError(ctx: JSContextRef; msg: string; exception: ptr JSValueRef)">throwTypeError(ctx: JSContextRef; msg: string; exception: ptr JSValueRef)</a></li>
 
 </ul>
 <ul class="simple nested-toc-section">throwTypeMismatch
@@ -756,10 +776,10 @@
 
 </div>
 <div id="buildCallbackFn-procs-all">
-  <div id="buildCallbackFn,string,string,NimNode,seq[ParamSpec]">
-  <dt><pre><span class="Keyword">proc</span> <a href="#buildCallbackFn%2Cstring%2Cstring%2CNimNode%2Cseq%5BParamSpec%5D"><span class="Identifier">buildCallbackFn</span></a><span class="Other">(</span><span class="Identifier">fname</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">ctxName</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">fnBody</span><span class="Other">:</span> <span class="Identifier">NimNode</span><span class="Other">;</span>
-                     <span class="Identifier">params</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">ParamSpec</span><span class="Other">]</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">NimNode</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
-    <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <div id="buildCallbackFn,string,string,NimNode,seq[ParamSpec],string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#buildCallbackFn%2Cstring%2Cstring%2CNimNode%2Cseq%5BParamSpec%5D%2Cstring"><span class="Identifier">buildCallbackFn</span></a><span class="Other">(</span><span class="Identifier">fname</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">ctxName</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">fnBody</span><span class="Other">:</span> <span class="Identifier">NimNode</span><span class="Other">;</span>
+                     <span class="Identifier">params</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">ParamSpec</span><span class="Other">]</span><span class="Other">;</span> <span class="Identifier">callbackName</span> <span class="Other">=</span> <span class="StringLit">&quot;&quot;</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">NimNode</span> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
     <p>Builds the nested <tt class="docutils literal"><span class="pre"><span class="Identifier">cdecl</span></span></tt> callback proc named <tt class="docutils literal"><span class="pre"><span class="Identifier">fname</span></span></tt>. The header params generate the arity check plus one reader each (see parseHeader); the user body follows with the bindings in scope plus <tt class="docutils literal"><span class="pre"><span class="Identifier">args</span></span></tt>, <tt class="docutils literal"><span class="pre"><span class="Identifier">argumentCount</span></span></tt> and <tt class="docutils literal"><span class="pre"><span class="Identifier">docBlock</span></span></tt> (the rendered JSDoc). Leading <tt class="docutils literal"><span class="pre"><span class="Comment">##</span></span></tt> doc comments in the body are collected for error output: the JSDoc block prefixes type mismatches and is appended to arity and <tt class="docutils literal"><span class="pre"><span class="Identifier">throwError</span></span></tt> messages:</p>
@@ -777,7 +797,7 @@
     <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Validates arg count, throwing a JS Error on mismatch. <tt class="docutils literal"><span class="pre"><span class="Identifier">usage</span></span></tt> is appended to the message when provided (the <tt class="docutils literal"><span class="pre"><span class="Identifier">init</span></span></tt> macro fills it from the member's <tt class="docutils literal"><span class="pre"><span class="Comment">##</span></span></tt> doc comment).
+    Validates arg count, throwing a JS TypeError on mismatch. <tt class="docutils literal"><span class="pre"><span class="Identifier">usage</span></span></tt> is appended to the message when provided (the <tt class="docutils literal"><span class="pre"><span class="Identifier">init</span></span></tt> macro fills it from the member's <tt class="docutils literal"><span class="pre"><span class="Comment">##</span></span></tt> doc comment).
     
   </dd>
 </div>
@@ -791,6 +811,19 @@
   <dd>
     
     Lower-bound-only arity check for variadic tails (see RestArgs). Same message shape as checkArity (&quot;expected at least N&quot;).
+    
+  </dd>
+</div>
+
+</div>
+<div id="constructorResult-procs-all">
+  <div id="constructorResult,JSContextRef,JSValueRef,string,ptr.JSValueRef">
+  <dt><pre><span class="Keyword">proc</span> <a href="#constructorResult%2CJSContextRef%2CJSValueRef%2Cstring%2Cptr.JSValueRef"><span class="Identifier">constructorResult</span></a><span class="Other">(</span><span class="Identifier">ctx</span><span class="Other">:</span> <span class="Identifier">JSContextRef</span><span class="Other">;</span> <span class="Identifier">value</span><span class="Other">:</span> <span class="Identifier">JSValueRef</span><span class="Other">;</span> <span class="Identifier">className</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
+                       <span class="Identifier">exception</span><span class="Other">:</span> <span class="Keyword">ptr</span> <span class="Identifier">JSValueRef</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">JSObjectRef</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span>
+    <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Validates a constructor body result before returning it to JSC.
     
   </dd>
 </div>
@@ -1020,6 +1053,18 @@
 </div>
 
 </div>
+<div id="makeConstructor-procs-all">
+  <div id="makeConstructor,JSContextRef,JSObjectCallAsConstructorCallback">
+  <dt><pre><span class="Keyword">proc</span> <a href="#makeConstructor%2CJSContextRef%2CJSObjectCallAsConstructorCallback"><span class="Identifier">makeConstructor</span></a><span class="Other">(</span><span class="Identifier">ctx</span><span class="Other">:</span> <span class="Identifier">JSContextRef</span><span class="Other">;</span> <span class="Identifier">cb</span><span class="Other">:</span> <span class="Identifier">JSObjectCallAsConstructorCallback</span><span class="Other">)</span><span class="Other">:</span> <span class="Identifier">JSObjectRef</span> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Wraps a Nim callback as a JavaScript constructor.
+    
+  </dd>
+</div>
+
+</div>
 <div id="makeFunction-procs-all">
   <div id="makeFunction,JSContextRef,string,JSObjectCallAsFunctionCallback">
   <dt><pre><span class="Keyword">proc</span> <a href="#makeFunction%2CJSContextRef%2Cstring%2CJSObjectCallAsFunctionCallback"><span class="Identifier">makeFunction</span></a><span class="Other">(</span><span class="Identifier">ctx</span><span class="Other">:</span> <span class="Identifier">JSContextRef</span><span class="Other">;</span> <span class="Identifier">name</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span>
@@ -1154,6 +1199,18 @@
   <dd>
     
     Optional string install for direct-result builders: absent options stay absent. True on success (or absence), false + JS throw on failure.
+    
+  </dd>
+</div>
+
+</div>
+<div id="parseHeader-procs-all">
+  <div id="parseHeader,NimNode,string">
+  <dt><pre><span class="Keyword">proc</span> <a href="#parseHeader%2CNimNode%2Cstring"><span class="Identifier">parseHeader</span></a><span class="Other">(</span><span class="Identifier">header</span><span class="Other">:</span> <span class="Identifier">NimNode</span><span class="Other">;</span> <span class="Identifier">what</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">)</span><span class="Other">:</span> <span class="Keyword">tuple</span><span class="Other">[</span><span class="Identifier">fname</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">,</span>
+    <span class="Identifier">params</span><span class="Other">:</span> <span class="Identifier">seq</span><span class="Other">[</span><span class="Identifier">ParamSpec</span><span class="Other">]</span><span class="Other">]</span> {.<span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Normalizes a <tt class="docutils literal"><span class="pre"><span class="Identifier">registerFn</span></span></tt> header. The command-position header parses as ObjConstr (colon-first params) or Call (<tt class="docutils literal"><span class="pre"><span class="Operator">?</span></span></tt>-first or <tt class="docutils literal"><span class="pre"><span class="Punctuation">(</span><span class="Punctuation">)</span></span></tt> params); both carry the same entries. A bare name is a build error pointing at the typed form.
     
   </dd>
 </div>
@@ -1352,6 +1409,18 @@
 </div>
 
 </div>
+<div id="throwTypeError-procs-all">
+  <div id="throwTypeError,JSContextRef,string,ptr.JSValueRef">
+  <dt><pre><span class="Keyword">proc</span> <a href="#throwTypeError%2CJSContextRef%2Cstring%2Cptr.JSValueRef"><span class="Identifier">throwTypeError</span></a><span class="Other">(</span><span class="Identifier">ctx</span><span class="Other">:</span> <span class="Identifier">JSContextRef</span><span class="Other">;</span> <span class="Identifier">msg</span><span class="Other">:</span> <span class="Identifier">string</span><span class="Other">;</span> <span class="Identifier">exception</span><span class="Other">:</span> <span class="Keyword">ptr</span> <span class="Identifier">JSValueRef</span><span class="Other">)</span> {.
+    <span><span class="Other pragmadots">...</span></span><span class="pragmawrap"><span class="Identifier">raises</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">tags</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span><span class="Other">,</span> <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
+  <dd>
+    
+    Throws a real JS TypeError with msg (Node parity for argument validation). Falls back to a plain Error when the TypeError constructor is unreachable. nil-safe like throwError.
+    
+  </dd>
+</div>
+
+</div>
 <div id="throwTypeMismatch-procs-all">
   <div id="throwTypeMismatch,JSContextRef,string,string,string,string,string,ptr.JSValueRef">
   <dt><pre><span class="Keyword">proc</span> <a href="#throwTypeMismatch%2CJSContextRef%2Cstring%2Cstring%2Cstring%2Cstring%2Cstring%2Cptr.JSValueRef"><span class="Identifier">throwTypeMismatch</span></a><span class="Other">(</span><span class="Identifier">ctx</span><span class="Other">:</span> <span class="Identifier">JSContextRef</span><span class="Other">;</span>
@@ -1360,7 +1429,7 @@
     <span class="Identifier">forbids</span><span class="Other">:</span> <span class="Other">[</span><span class="Other">]</span></span>.}</pre></dt>
   <dd>
     
-    Throws <tt class="docutils literal"><span class="pre"><span class="Keyword">type</span> <span class="Identifier">mismatch</span> <span class="Identifier">parameter</span><span class="Punctuation">:</span> <span class="Operator">...</span></span></tt> with the JSDoc block first (user format). Without docs the function name prefixes instead so the error still names its owner.
+    Throws <tt class="docutils literal"><span class="pre"><span class="Keyword">type</span> <span class="Identifier">mismatch</span> <span class="Identifier">parameter</span><span class="Punctuation">:</span> <span class="Operator">...</span></span></tt> first with the JSDoc block after it (user format). Without docs the function name prefixes instead so the error still names its owner.
     
   </dd>
 </div>
@@ -1485,8 +1554,8 @@
   <dd>
     
     <p>Module initializer. Takes <tt class="docutils literal"><span class="pre"><span class="Keyword">proc</span><span class="Punctuation">(</span><span class="Operator">&lt;</span><span class="Identifier">name</span><span class="Operator">&gt;:</span> <span class="Identifier">Module</span><span class="Punctuation">)</span> <span class="Operator">=</span> <span class="Operator">...</span></span></tt> and generates the <tt class="docutils literal"><span class="pre"><span class="Identifier">install</span><span class="Operator">*</span></span></tt> entry point behind <tt class="docutils literal"><span class="pre"><span class="Identifier">require</span><span class="Punctuation">(</span><span class="StringLit">&quot;std/...&quot;</span><span class="Punctuation">)</span></span></tt>:</p>
-<p>init proc(module: Module) = exportObject: module.property greeting = &quot;hi&quot; module.registerFn readFile(path: string): ...</p>
-<p><tt class="docutils literal"><span class="pre"><span class="Identifier">module</span><span class="Operator">.</span><span class="Identifier">registerFn</span></span></tt> defines the callback and attaches it to the namespace; <tt class="docutils literal"><span class="pre"><span class="Identifier">module</span><span class="Operator">.</span><span class="Identifier">property</span></span></tt> attaches a data value (string, int, float, bool, JsonNode). A <tt class="docutils literal"><span class="pre"><span class="Comment">##</span></span></tt> doc comment on a member is collected for error output (see buildCallbackFn). Bare statements run as init-time setup code. Member declarations outside <tt class="docutils literal"><span class="pre"><span class="Identifier">exportObject</span><span class="Punctuation">:</span></span></tt> are an error, as is anything but members inside it.</p>
+<p>init proc(module: Module) = exportObject: module.property greeting = &quot;hi&quot; module.registerFn readFile(path: string): ... module.exportClass Point(value: int): let point = newObject(ctx) setProp(ctx, point, &quot;value&quot;, toJS(ctx, value), exception) point</p>
+<p><tt class="docutils literal"><span class="pre"><span class="Identifier">module</span><span class="Operator">.</span><span class="Identifier">registerFn</span></span></tt> defines a function, <tt class="docutils literal"><span class="pre"><span class="Identifier">module</span><span class="Operator">.</span><span class="Identifier">exportClass</span></span></tt> defines a constructor whose body returns an object, and <tt class="docutils literal"><span class="pre"><span class="Identifier">module</span><span class="Operator">.</span><span class="Identifier">property</span></span></tt> attaches a data value (string, int, float, bool, JsonNode). A <tt class="docutils literal"><span class="pre"><span class="Comment">##</span></span></tt> doc comment on a member is collected for error output (see buildCallbackFn). Bare statements run as init-time setup code. Member declarations outside <tt class="docutils literal"><span class="pre"><span class="Identifier">exportObject</span><span class="Punctuation">:</span></span></tt> are an error, as is anything but members inside it.</p>
 
     
   </dd>
@@ -1536,7 +1605,7 @@
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2026-11-13 17:42:25 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2026-11-22 12:20:36 UTC</small>
       </div>
     </div>
   </div>

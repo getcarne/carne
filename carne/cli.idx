@@ -29,7 +29,9 @@ nim	withSpinner	carne/cli.html#withSpinner.t,string,untyped	template withSpinner
 nim	confirm	carne/cli.html#confirm,string	proc confirm(question: string): bool		226
 nim	findTestFiles	carne/cli.html#findTestFiles,string	proc findTestFiles(root = "tests"): seq[string]		238
 nim	resolveTestArg	carne/cli.html#resolveTestArg,string,string	proc resolveTestArg(arg: string; root = "tests"): string		249
-nim	printHelp	carne/cli.html#printHelp	proc printHelp()		269
+nim	carneCommands	carne/cli.html#carneCommands	const carneCommands		269
+nim	splitScriptArgs	carne/cli.html#splitScriptArgs,seq[string]	proc splitScriptArgs(raw: seq[string]): tuple[cli: seq[string], extra: seq[string]]		275
+nim	printHelp	carne/cli.html#printHelp	proc printHelp()		320
 nimgrp	displaywarning	carne/cli.html#displayWarning-procs-all	proc		140
 nimgrp	displayinfo	carne/cli.html#displayInfo-procs-all	proc		150
 nimgrp	displaysuccess	carne/cli.html#displaySuccess-procs-all	proc		160
