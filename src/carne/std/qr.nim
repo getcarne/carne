@@ -400,14 +400,14 @@ init proc(module: Module) =
                 "options.eci must be a non-negative integer")
             eci = eciV
         except CatchableError as e:
-          throwError(ctx, "encode: " & e.msg, exception)
+          throwTypeError(ctx, "encode: " & e.msg, exception)
           return nil
       if fam == qfRmqr and mask != -1:
-        throwError(ctx, "encode: options.mask is not supported for rMQR",
+        throwTypeError(ctx, "encode: options.mask is not supported for rMQR",
           exception)
         return nil
       if eci != 0 and fam != qfModel2:
-        throwError(ctx, "encode: options.eci is only supported for Model 2",
+        throwTypeError(ctx, "encode: options.eci is only supported for Model 2",
           exception)
         return nil
       try:
@@ -420,7 +420,7 @@ init proc(module: Module) =
         matrixResult(ctx, m, famName, version, ecName(level), mask,
           "encode", exception)
       except CatchableError as e:
-        throwError(ctx, "encode: " & e.msg, exception)
+        throwTypeError(ctx, "encode: " & e.msg, exception)
         nil
 
     module.registerFn encodeAqr(mainPayload: string, ringPayload: string,
@@ -437,7 +437,7 @@ init proc(module: Module) =
           if ver.kind != nvkUndefined:
             pinned = versionInt(ver, 0, 40, "AQR core")
         except CatchableError as e:
-          throwError(ctx, "encodeAqr: " & e.msg, exception)
+          throwTypeError(ctx, "encodeAqr: " & e.msg, exception)
           return nil
       try:
         let m = encodeAqr(mainPayload, ringPayload, level, pinned)
@@ -446,7 +446,7 @@ init proc(module: Module) =
         matrixResult(ctx, m, "aqr", version, ecName(level), -1,
           "encodeAqr", exception)
       except CatchableError as e:
-        throwError(ctx, "encodeAqr: " & e.msg, exception)
+        throwTypeError(ctx, "encodeAqr: " & e.msg, exception)
         nil
 
     module.registerFn decode(matrix: NimValue, optsObj ?: JSObjectRef):
@@ -461,13 +461,13 @@ init proc(module: Module) =
         try:
           discard getOptStr(ctx, optsObj, "family", famName)
         except CatchableError as e:
-          throwError(ctx, "decode: " & e.msg, exception)
+          throwTypeError(ctx, "decode: " & e.msg, exception)
           return nil
       if famName.len > 0 and famName.toLowerAscii() notin
           ["model2", "model-2", "m2", "qr", "model1", "model-1", "m1",
            "micro", "microqr", "micro-qr", "micro-qr-code", "rmqr",
            "r-mqr", "rectangular", "rectangular-micro", "aqr"]:
-        throwError(ctx, "decode: options.family must be one of model2, " &
+        throwTypeError(ctx, "decode: options.family must be one of model2, " &
           "model1, micro, rmqr, aqr", exception)
         return nil
       let famKey = famName.toLowerAscii()
@@ -475,7 +475,7 @@ init proc(module: Module) =
       try:
         m = matrixFromJS(matrix, "decode")
       except CatchableError as e:
-        throwError(ctx, e.msg, exception)
+        throwTypeError(ctx, e.msg, exception)
         return nil
       let square = m.width == m.height
       var res: QrDecodeResult
@@ -525,7 +525,7 @@ init proc(module: Module) =
           except CatchableError:
             discard
       except CatchableError as e:
-        throwError(ctx, "decode: " & e.msg, exception)
+        throwTypeError(ctx, "decode: " & e.msg, exception)
         return nil
       if not found:
         if famKey.len > 0:
@@ -574,12 +574,12 @@ init proc(module: Module) =
           discard getOptStr(ctx, optsObj, "encryption", encryption)
           discard getOptBool(ctx, optsObj, "hidden", hidden)
         except CatchableError as e:
-          throwError(ctx, "wifi: " & e.msg, exception)
+          throwTypeError(ctx, "wifi: " & e.msg, exception)
           return nil
       try:
         toJS(ctx, makeWifi(ssid, password, encryption, hidden))
       except CatchableError as e:
-        throwError(ctx, "wifi: " & e.msg, exception)
+        throwTypeError(ctx, "wifi: " & e.msg, exception)
         nil
 
     module.registerFn mecard(name: string, optsObj ?: JSObjectRef):
@@ -594,12 +594,12 @@ init proc(module: Module) =
           discard getOptStr(ctx, optsObj, "email", email)
           discard getOptStr(ctx, optsObj, "url", url)
         except CatchableError as e:
-          throwError(ctx, "mecard: " & e.msg, exception)
+          throwTypeError(ctx, "mecard: " & e.msg, exception)
           return nil
       try:
         toJS(ctx, makeMecard(name, phone, email, url))
       except CatchableError as e:
-        throwError(ctx, "mecard: " & e.msg, exception)
+        throwTypeError(ctx, "mecard: " & e.msg, exception)
         nil
 
     module.registerFn url(url: string):
@@ -608,7 +608,7 @@ init proc(module: Module) =
       try:
         toJS(ctx, makeUrl(url))
       except CatchableError as e:
-        throwError(ctx, "url: " & e.msg, exception)
+        throwTypeError(ctx, "url: " & e.msg, exception)
         nil
 
     module.registerFn sms(phone: string, message ?: string):
@@ -616,7 +616,7 @@ init proc(module: Module) =
       try:
         toJS(ctx, makeSms(phone, message))
       except CatchableError as e:
-        throwError(ctx, "sms: " & e.msg, exception)
+        throwTypeError(ctx, "sms: " & e.msg, exception)
         nil
 
     module.registerFn email(to: string, optsObj ?: JSObjectRef):
@@ -628,12 +628,12 @@ init proc(module: Module) =
           discard getOptStr(ctx, optsObj, "subject", subject)
           discard getOptStr(ctx, optsObj, "body", body)
         except CatchableError as e:
-          throwError(ctx, "email: " & e.msg, exception)
+          throwTypeError(ctx, "email: " & e.msg, exception)
           return nil
       try:
         toJS(ctx, makeEmail(to, subject, body))
       except CatchableError as e:
-        throwError(ctx, "email: " & e.msg, exception)
+        throwTypeError(ctx, "email: " & e.msg, exception)
         nil
 
     module.registerFn sqrc(publicData: string, privateData: string,
@@ -652,7 +652,7 @@ init proc(module: Module) =
           level = ecLevelArg(ctx, optsObj)
           discard getOptBool(ctx, optsObj, "extended", extended)
         except CatchableError as e:
-          throwError(ctx, "sqrc: " & e.msg, exception)
+          throwTypeError(ctx, "sqrc: " & e.msg, exception)
           return nil
       try:
         var opts = defaultQrEncodeOptions()
@@ -667,7 +667,7 @@ init proc(module: Module) =
         matrixResult(ctx, m, "sqrc", $((m.width - 17) div 4),
           ecName(level), -1, "sqrc", exception)
       except CatchableError as e:
-        throwError(ctx, "sqrc: " & e.msg, exception)
+        throwTypeError(ctx, "sqrc: " & e.msg, exception)
         nil
 
     module.registerFn unsqrc(text: string, key: JSValueRef):

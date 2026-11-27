@@ -296,6 +296,23 @@ processing, crypto, networking, and developer tools:
 
 Full API reference with examples: https://getcarne.github.io/docs/
 
+### Process, terminal and watcher notes
+- `os.exec(cmd)` captures output and blocks the event loop. For long-running children use
+  `os.spawn(cmd[, {onStdout, onStderr}])`: it returns a promise of `{code, stdout, stderr}`, chunks
+  stream to the callbacks while the loop keeps running, and the child's stdin arrives closed.
+- `terminal.readLine` / `readPassword` are blocking and stall every connection and timer of a server.
+  Use them in interactive CLI scripts only.
+- `watcher.watch(...).close()` is final and idempotent; `watchOnce` throws on timeout. Neither is
+  available inside http worker threads.
+
+### Workers and shared state
+Each http worker is a full runtime: it re-runs the script in its own JS context, on its own thread
+and its own event loop. Nothing is shared between workers (globals, caches, open sockets); share data
+through the database, files, or a socket. Linux balances connections across workers with
+`SO_REUSEPORT`; macOS shares one listening socket. A blocking handler stalls only its own worker's loop,
+so connections assigned to that worker wait while the other workers keep serving. `process.isWorker`
+gates main-only setup, `close(port)` stops every worker, and teardown joins them.
+
 ## Roadmap
 - [x] JSC runtime: console/process/require/timers CLI
 - [x] Package management (`carne pkg`, manifests)
@@ -371,3 +388,21 @@ Bodies are byte-identical (11 bytes); headers differ per runtime, so
 ### 🎩 License
 MIT license. [Made by Humans from OpenPeeps](https://github.com/openpeeps).<br>
 Copyright OpenPeeps & Contributors &mdash; All rights reserved.
+
+### Format round trips
+
+```js
+const html = require("std/html");
+html.stringify(html.parse("<p>Hello</p>"));
+
+const vcard = require("std/vcard");
+const card = vcard.parse("BEGIN:VCARD\nFN:Ada\nEND:VCARD\n");
+vcard.parse(vcard.stringify(card));
+
+const feed = require("std/feed");
+const rss = feed.parseRss(feed.stringifyRss({ channel: { title: "News" } }));
+
+const path = require("std/path");
+path.format(path.parse("/a/b/c.txt")); // "/a/b/c.txt"
+path.join(["a", "b", "c.txt"]);         // "a/b/c.txt"
+```

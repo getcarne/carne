@@ -43,6 +43,7 @@ proc pgEnsureLib() =
     const candidates = [
       "libpq.so.5",
       "libpq.so",
+      "/usr/lib64/libpq.so.5",
       "/usr/lib/x86_64-linux-gnu/libpq.so.5",
       "/usr/lib/aarch64-linux-gnu/libpq.so.5"
     ]

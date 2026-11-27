@@ -12,10 +12,10 @@ Base: `src/carne/runtime.nim:162` (`runCodeEx`), `src/carne/modules.nim:48` (laz
 
 - [x] Top-level `await` in entry scripts without manual async IIFE wrapper. Keep sync path byte-identical, preserve line numbers on syntax errors, keep `pkg/*` requires sync.
 - [x] `exportClass` in the module DSL alongside `registerFn`. Same arity checks and error prefix, teardown-safe.
-- [ ] Error contract: one `fn:` prefix, JSDoc-first type mismatches, `TypeError` for arg validation. Audit all std modules for bare `options.*` messages.
-- [ ] Lazy event loop stays lazy: pure-sync scripts never create a powpow loop (`src/carne/runtime.nim:224`). Keep per-run TLS and cached spec data.
-- [ ] Require cache and teardown: per-run `instances`, ordered `onTeardown`, worker thread isolation (`src/carne/modules.nim:40`).
-- [ ] CLI help stays in sync: top-level usage and `gen` sub-help list the same commands and flags.
+- [x] Error contract: one `fn:` prefix, JSDoc-first type mismatches, `TypeError` for arg validation. Audit all std modules for bare `options.*` messages.
+- [x] Lazy event loop stays lazy: pure-sync scripts never create a powpow loop (`src/carne/runtime.nim:224`). Keep per-run TLS and cached spec data.
+- [x] Require cache and teardown: per-run `instances`, ordered `onTeardown`, worker thread isolation (`src/carne/modules.nim:40`).
+- [x] CLI help stays in sync: top-level usage and `gen` sub-help list the same commands and flags.
 
 ## 1. Std format parity
 
@@ -52,12 +52,12 @@ Verify: `clue test test_os test_terminal test_watcher test_env test_benchmark`, 
 
 Base: `src/carne/std/http.nim:1`, `src/carne/std/tcp.nim:1`, plus `ws`, `udp`, `httpworkers`.
 
-- [ ] `std/http`: async client and server, worker mode, zero-copy file responses, ETag and Range, method helpers. Handler return contract stable (string, JSON, Uint8Array, file).
-- [ ] `std/ws`: async + sync client, server, binary, ping, protocol, `wss` client path.
-- [ ] `std/tcp`: client + server, optional TLS, `conn.close` releases pending slot, no hang on timer-close. Server `onClose` still fires on remote close.
-- [ ] `std/udp`: bind and connect, message boundaries, echo behavior.
-- [ ] Workers: per-thread context, `process.isWorker` gating, teardown joins. Document shared-state limits and backpressure behavior.
-- [ ] TLS: serve and connect opts, PEM handling, system CA path, per-run shared client context.
+- [x] `std/http`: async client and server, worker mode, zero-copy file responses, ETag and Range, method helpers. Handler return contract stable (string, JSON, Uint8Array, file).
+- [x] `std/ws`: async + sync client, server, binary, ping, protocol, `wss` client path.
+- [x] `std/tcp`: client + server, optional TLS, `conn.close` releases pending slot, no hang on timer-close. Server `onClose` still fires on remote close.
+- [x] `std/udp`: bind and connect, message boundaries, echo behavior.
+- [x] Workers: per-thread context, `process.isWorker` gating, teardown joins. Document shared-state limits and backpressure behavior.
+- [x] TLS: serve and connect opts, PEM handling, system CA path, per-run shared client context.
 
 Verify: `clue test test_http test_http_workers test_ws test_tcp test_udp`, `bench/http-hello` for regressions.
 

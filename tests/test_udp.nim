@@ -41,3 +41,15 @@ test "udp socket validates shapes":
       "const udp = require('std/udp'); " &
       "const s = udp.bind(18414, (m) => {}); " &
       "s.send('x')")
+
+test "udp preserves message boundaries":
+  check runCode(
+    "const udp = require('std/udp'); " &
+    "const got = []; " &
+    "const s = udp.bind(18413, (msg) => { got.push(msg.data); " &
+    "if (got.length === 2) { c.close(); s.close(); done(got.sort().join('|')); } }); " &
+    "const c = udp.connect('127.0.0.1', 18413, () => {}); " &
+    "let done; " &
+    "const gate = new Promise((r) => { done = r; }); " &
+    "c.send('one'); c.send('two'); " &
+    "gate") == "one|two"

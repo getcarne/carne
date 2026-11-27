@@ -46,3 +46,9 @@ test "charset reflects bundled defaults":
 test "charset rejects non-string input":
   expect CarneError:
     discard runCode("require('std/mimetype').charset(42)")
+
+test "charset uses exact lowercase MIME matches":
+  check runCode("require('std/mimetype').charset('application/json')") == "UTF-8"
+  check runCode("require('std/mimetype').charset('application/news-groupinfo')") == "US-ASCII"
+  check runCode("require('std/mimetype').charset('text/html')") == "null"
+  check runCode("require('std/mimetype').charset('Application/JSON')") == "null"

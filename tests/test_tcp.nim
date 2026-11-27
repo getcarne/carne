@@ -85,3 +85,24 @@ test "tcp tls rejects self-signed by default":
     "() => { tcp.close(srv.port); done('resolved?!'); }, " &
     "() => { tcp.close(srv.port); done('rejected'); }); " &
     "gate") == "rejected"
+
+test "tcp server onClose fires when the remote closes":
+  check runCode(
+    "const tcp = require('std/tcp'); " &
+    "let done; " &
+    "const gate = new Promise((r) => { done = r; }); " &
+    "const srv = tcp.serve(18305, {onClose: () => " &
+    "{ tcp.close(srv.port); done('closed'); }}); " &
+    "(async () => { " &
+    "const c = await tcp.connect('127.0.0.1', 18305, {}); " &
+    "c.close(); })(); " &
+    "gate") == "closed"
+
+test "tcp conn.close releases the pending slot (script exits)":
+  check runCode(
+    "const tcp = require('std/tcp'); " &
+    "const srv = tcp.serve(18306, {}); " &
+    "(async () => { " &
+    "const c = await tcp.connect('127.0.0.1', 18306, {}); " &
+    "c.close(); tcp.close(srv.port); })(); " &
+    "'ok'") == "ok"

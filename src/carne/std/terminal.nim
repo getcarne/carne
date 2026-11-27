@@ -19,6 +19,13 @@
 # says otherwise (see colorEnabled). write/readLine/readPassword
 # touch the real terminal and block the loop like os.exec: fine in
 # scripts, stalls servers.
+#
+# Contract (stable): readLine and readPassword are BLOCKING by design.
+# They return null on EOF, and never yield to the event loop, so in an
+# http/tcp/ws server every other connection, timer and watcher stalls
+# until the user answers. Use them only in interactive CLI scripts and
+# guard with isTTY(). write never appends a newline. isTTY/colorEnabled
+# honour the global --isatty:<true|false> override.
 
 import std/strutils
 import std/options

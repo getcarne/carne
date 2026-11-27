@@ -318,26 +318,26 @@ init proc(module: Module) =
       try:
         toJS(ctx, $nimValueToPath(value))
       except CatchableError as e:
-        throwError(ctx, "format: " & e.msg, exception)
+        throwTypeError(ctx, "format: " & e.msg, exception)
         nil
 
     module.registerFn join(parts: NimValue):
       ## path.join(["a", "b"]) -> normalized local path string
       try:
         if parts.kind != nvkArray:
-          throwError(ctx, "join: expected array, got " &
+          throwTypeError(ctx, "join: expected array, got " &
             jsTypeName(parts.kind), exception)
           return nil
         var raw: seq[string] = @[]
         for item in parts.arr:
           if item.kind != nvkString:
-            throwError(ctx, "join: entries must be strings, got " &
+            throwTypeError(ctx, "join: entries must be strings, got " &
               jsTypeName(item.kind), exception)
             return nil
           raw.add(item.s)
         toJS(ctx, normalizeLocalText(raw.join("/")))
       except CatchableError as e:
-        throwError(ctx, "join: " & e.msg, exception)
+        throwTypeError(ctx, "join: " & e.msg, exception)
         nil
 
     module.registerFn normalize(text: string):

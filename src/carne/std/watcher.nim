@@ -11,6 +11,15 @@
 # linkCount, revoke. watchOnce blocks, pumping the same loop until the
 # first event batch or timeoutMs (default 10000), then returns the
 # events array. close() is final and idempotent.
+#
+# Semantics (stable):
+#   - close() releases the pending slot immediately; calling it again,
+#     or from inside the event callback, is a no-op returning true.
+#   - After close(), no further callbacks fire.
+#   - watchOnce throws "watchOnce: timed out after <ms>ms" when no event
+#     arrives within timeoutMs; timeoutMs must be positive.
+#   - Inside http worker threads both watch and watchOnce throw; watch
+#     from the main thread and hand results to workers.
 
 import std/[monotimes, tables, times]
 

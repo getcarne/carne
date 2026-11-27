@@ -1,3 +1,4 @@
+import std/strutils
 import unittest
 
 import carne
@@ -96,3 +97,34 @@ test "sql format rejects non-boolean upperCase":
   expect CarneError:
     discard runCode(
       "require('std/sql').mysql.format('select 1', {upperCase: 1})")
+
+test "dialect parity: every dialect exposes the same API":
+  for d in ["sqlite", "postgres", "mysql"]:
+    check runCode(
+      "Object.keys(require('std/sql')." & d & ").sort().join()") ==
+      "format,parse,stringify,validate"
+
+test "dialect parity: simple select parses and round-trips":
+  for d in ["sqlite", "postgres", "mysql"]:
+    check runCode(
+      "const s = require('std/sql')." & d & ";" &
+      "s.parse(s.stringify(s.parse('SELECT a FROM t'))).kind") == "StmtList"
+    check runCode(
+      "require('std/sql')." & d & ".validate('SELECT a FROM t').valid") ==
+      "true"
+    check runCode(
+      "require('std/sql')." & d & ".validate('SELEC a FROM').valid") ==
+      "false"
+
+test "format upperCase must be a boolean (TypeError, fn: prefix)":
+  for d in ["sqlite", "postgres", "mysql"]:
+    let r = runCode("""
+      (() => { try {
+        require('std/sql').""" & d & """.format('select 1', {upperCase: 'x'});
+        return 'none'; } catch (e) { return e.constructor.name + '|' +
+        String(e.message).split('\n').filter(l => !/^\s*(\*|\/\*)/.test(l))
+        .join('|'); } })()""")
+    check r.startsWith("TypeError|" & d &
+      ".format: options.upperCase must be a boolean")
+    check runCode("require('std/sql')." & d &
+      ".format('select 1', {upperCase: true})").len > 0

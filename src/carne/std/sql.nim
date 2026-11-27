@@ -74,6 +74,14 @@ proc sqlErr(ctx: JSContextRef; docBlock, name, detail: string;
     msg = docBlock & "\n"
   throwError(ctx, msg & name & ": " & detail, exception)
 
+proc sqlTypeErr(ctx: JSContextRef; docBlock, name, detail: string;
+    exception: ptr JSValueRef) =
+  ## Argument-validation throw: a real TypeError, JSDoc block first.
+  var msg = ""
+  if docBlock.len > 0:
+    msg = docBlock & "\n"
+  throwTypeError(ctx, msg & name & ": " & detail, exception)
+
 proc doParse(ctx: JSContextRef; text: string; driver: SqlDriver;
     name, docBlock: string; exception: ptr JSValueRef): JSValueRef =
   try:
@@ -234,7 +242,7 @@ proc readUpperOpt(ctx: JSContextRef; optsObj: JSValueRef; name: string;
   var err = ""
   let u = getField(ctx, optsObj, "upperCase", err)
   if err != "":
-    sqlErr(ctx, docBlock, name, "options.upperCase " & err, exception)
+    sqlTypeErr(ctx, docBlock, name, "options.upperCase " & err, exception)
     return false
   case u.kind
   of nvkBool:
@@ -242,7 +250,7 @@ proc readUpperOpt(ctx: JSContextRef; optsObj: JSValueRef; name: string;
   of nvkUndefined, nvkNull:
     discard
   else:
-    sqlErr(ctx, docBlock, name,
+    sqlTypeErr(ctx, docBlock, name,
       "options.upperCase must be a boolean, got " & jsTypeName(u.kind),
       exception)
     return false

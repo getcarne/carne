@@ -226,6 +226,10 @@ proc hasAwaitToken(code: string): bool =
     else:
       inc i
 
+var loopCreatedLastRun* = false
+  ## True when the most recent runCodeEx on this thread created a powpow
+  ## loop. Pure-sync scripts must leave it false (lazy loop contract).
+
 proc runCodeEx*(code: string; sourceURL = "script.js";
     argv: seq[string] = @[]; baseDir = ""): tuple[output: string, code: int] =
   ## Evaluates `code`, drains async work, returns the completion value
@@ -322,6 +326,7 @@ proc runCodeEx*(code: string; sourceURL = "script.js";
       setCurrentRt(nil)
       for hook in onTeardown:
         hook()
+      loopCreatedLastRun = rt.loop != nil
       if rt.loop != nil:
         rt.loop.close()
       mark(prof, pt, "teardown")

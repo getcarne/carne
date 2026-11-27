@@ -424,3 +424,40 @@ test "db driver postgres unreachable throws":
       "require('std/db/driver').connectSync({dialect: 'postgres', " &
       "host: '127.0.0.1', port: 1, database: 'carne_test', " &
       "connectTimeout: 2})")
+
+test "db driver sync/async parity: $N placeholders rejected on sqlite":
+  expect CarneError:
+    discard runCode("(async () => { " &
+      "const c = await require('std/db/driver').connect('sqlite::memory:'); " &
+      "await c.query('SELECT $1', [1]); })()")
+
+test "db driver sync/async parity: param count mismatch rejects":
+  expect CarneError:
+    discard runCode("(async () => { " &
+      "const c = await require('std/db/driver').connect('sqlite::memory:'); " &
+      "await c.query('SELECT ? , ?', [1]); })()")
+
+test "db driver sync/async parity: same rows from both paths":
+  check runCode("(async () => { " &
+    "const d = require('std/db/driver'); " &
+    "const s = d.connectSync('sqlite::memory:'); " &
+    "const a = await d.connect('sqlite::memory:'); " &
+    "const q = 'SELECT ? AS x, ? AS y'; " &
+    "const r1 = s.querySync(q, [1, 'z']); " &
+    "const r2 = await a.query(q, [1, 'z']); " &
+    "return JSON.stringify(r1.rows) === JSON.stringify(r2.rows) && " &
+    "r1.rowCount === r2.rowCount; })()") == "true"
+
+test "db driver postgres connect failure is a catchable error, not a hang":
+  expect CarneError:
+    discard runCode("require('std/db/driver')" &
+      ".connectSync('postgres://u:p@127.0.0.1:1/nodb?connect_timeout=2')")
+  expect CarneError:
+    discard runCode("(async () => { await require('std/db/driver')" &
+      ".connect('postgres://u:p@127.0.0.1:1/nodb?connect_timeout=2'); })()")
+
+test "db driver sqlite never loads libpq":
+  ## Pure sqlite use must work even where libpq is absent; the lazy
+  ## loader only runs on a postgres connect.
+  check runCode("require('std/db/driver').connectSync('sqlite::memory:')" &
+    ".querySync('SELECT 1 AS a').rows[0].a") == "1"

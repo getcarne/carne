@@ -92,3 +92,23 @@ test "watchOnce is rejected in http workers":
     "const res = await http.fetch('http://127.0.0.1:18131/'); " &
     "http.close(18131); " &
     "return res.body; })()") == "threw"
+
+test "watchOnce rejects non-positive timeouts":
+  expect CarneError:
+    discard runCode("require('std/watcher').watchOnce('/tmp', 0)")
+
+test "close is final and idempotent, no callback after close":
+  let path = tmpPath("final")
+  writeFile(path, "start\n")
+  try:
+    check runCode(
+      "const watcher = require('std/watcher'); " &
+      "const os = require('std/os'); " &
+      "let fired = 0; " &
+      "const w = watcher.watch('" & path & "', () => { fired++; }); " &
+      "const a = w.close(); const b = w.close(); " &
+      "os.appendFile('" & path & "', 'x'); " &
+      "new Promise(r => setTimeout(() => r(a + ',' + b + ',' + fired), 150))"
+    ) == "true,true,0"
+  finally:
+    removeFile(path)

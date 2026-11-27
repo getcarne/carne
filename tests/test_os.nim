@@ -320,3 +320,26 @@ test "os rejects bad arity and types":
     discard runCode("require('std/os').readFile(42)")
   expect CarneError:
     discard runCode("require('std/os').writeFile('x')")
+
+test "os spawn does not block the event loop":
+  ## A timer must fire while the child is still running: spawn polls on
+  ## the shared loop instead of waiting like exec.
+  check runCode("""
+    (async () => {
+      let ticks = 0;
+      const t = setInterval(() => { ticks++; }, 10);
+      const r = await require('std/os').spawn('sleep 0.3; echo done');
+      clearInterval(t);
+      return r.code + ':' + r.stdout.trim() + ':' + (ticks >= 3);
+    })()""") == "0:done:true"
+
+test "os spawn reports a failing command through code and stderr":
+  check runCode("""
+    (async () => {
+      const r = await require('std/os').spawn('carne_no_such_cmd_xyz');
+      return (r.code !== 0) + ':' + (r.stderr.length > 0);
+    })()""") == "true:true"
+
+test "exec remains capture-only":
+  check runCode("JSON.stringify(require('std/os').exec('echo hi'))") ==
+    """{"code":0,"output":"hi\n"}"""
