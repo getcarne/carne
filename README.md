@@ -388,21 +388,3 @@ Bodies are byte-identical (11 bytes); headers differ per runtime, so
 ### 🎩 License
 MIT license. [Made by Humans from OpenPeeps](https://github.com/openpeeps).<br>
 Copyright OpenPeeps & Contributors &mdash; All rights reserved.
-
-### Format round trips
-
-```js
-const html = require("std/html");
-html.stringify(html.parse("<p>Hello</p>"));
-
-const vcard = require("std/vcard");
-const card = vcard.parse("BEGIN:VCARD\nFN:Ada\nEND:VCARD\n");
-vcard.parse(vcard.stringify(card));
-
-const feed = require("std/feed");
-const rss = feed.parseRss(feed.stringifyRss({ channel: { title: "News" } }));
-
-const path = require("std/path");
-path.format(path.parse("/a/b/c.txt")); // "/a/b/c.txt"
-path.join(["a", "b", "c.txt"]);         // "a/b/c.txt"
-```
