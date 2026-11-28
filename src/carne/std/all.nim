@@ -19,6 +19,7 @@ import ./feed
 import ./csv
 import ./xml
 import ./html
+import ./markdown
 import ./sql
 import ./crypto
 import ./path
@@ -53,6 +54,7 @@ registerStd("std/feed", feed.install)
 registerStd("std/csv", csv.install)
 registerStd("std/xml", xml.install)
 registerStd("std/html", html.install)
+registerStd("std/markdown", markdown.install)
 registerStd("std/sql", sql.install)
 registerStd("std/crypto", crypto.install)
 registerStd("std/path", path.install)

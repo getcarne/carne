@@ -36,7 +36,7 @@ script that just runs, take Carne.
 - Powerful Standard Library fully written in Nim lang
 - Cryptographic library via [pkg/nimcypher](https://github.com/nimbase/nimcypher)
 - HTTP/1.1, H/2, UDP, TCP and WebSockets library via [pkg/powpow](https://github.com/openpeeps/powpow)
-- Built-in formatters: `yaml`, `toml`, `csv`, `xml`, `markdown`, `vcard`, `feed`, `sql`, `css`, `diff`, `qr`, `svg` via [pkg/openparser](https://github.com/openpeeps/openparser) (`colors` is pure JS)
+- Built-in formatters: `yaml`, `toml`, `csv`, `xml`, `vcard`, `feed`, `sql`, `css`, `diff`, `qr`, `svg` via [pkg/openparser](https://github.com/openpeeps/openparser), `markdown` via [pkg/marvdown](https://github.com/openpeeps/marvdown) (`colors` is pure JS)
 - Built-in archives and compression: `tar`, `zip`, `rar`, `gz`, `lz4`, `bz2`, `brotli` via [pkg/archive](https://github.com/nimbase/archive)
 - i18n via GNU Gettext PO/MO
 - CSS and JavaScript bundler via [pkg/squeezy](https://github.com/openpeeps/squeezy)
@@ -268,6 +268,7 @@ processing, crypto, networking, and developer tools:
 - `std/csv` - CSV parsing and serialization
 - `std/xml` - XML parsing and serialization
 - `std/html` - HTML parsing and serialization
+- `std/markdown` - Markdown to HTML/AST, front matter, table of contents
 - `std/vcard` - vCard contact parsing and serialization
 - `std/feed` - RSS and Atom feed parsing and serialization
 - `std/sql` - SQL parsing and validation (sqlite, postgres, mysql)
